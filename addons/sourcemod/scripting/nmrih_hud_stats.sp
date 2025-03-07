@@ -112,7 +112,7 @@ void UpdateHUDForAll()
             Format(temp, sizeof(temp), "%-16s Меле: %2d  Огнестрел: %2d  Всего: %2d\n",
                    clientName, melee, gun, total);
             
-            strcopy(hudText + strlen(hudText), sizeof(hudText) - strlen(hudText), temp);
+            strcat(hudText, sizeof(hudText), temp);
         }
     }
     
