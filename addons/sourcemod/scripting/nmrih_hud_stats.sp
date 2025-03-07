@@ -12,6 +12,7 @@
 
 #include <sourcemod>
 #include <sdktools>
+#include <sourcemod/hud.inc>
 
 int g_MeleeKills[MAXPLAYERS+1];
 int g_GunKills[MAXPLAYERS+1];
