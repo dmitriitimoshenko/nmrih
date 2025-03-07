@@ -10,19 +10,6 @@ cfg/user_default.scr
 cfg/valve.rc
 cfg/sourcemod
 
-addons/metamod
-addons/sourcemod/configs
-addons/sourcemod/data
-addons/sourcemod/extensions
-addons/sourcemod/gamedata
-addons/sourcemod/scripting
-addons/sourcemod/translations
-addons/sourcemod/GPLv2.txt
-addons/sourcemod/GPLv3.txt
-addons/sourcemod/LICENSE.txt
-addons/metamod_x64.vdf
-addons/metamod.vdf
-
 bin/
 custom/
 detail.vbsp
