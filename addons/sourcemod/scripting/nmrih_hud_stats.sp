@@ -19,12 +19,20 @@ int g_GunKills[MAXPLAYERS+1];
 
 public void OnPluginStart()
 {
-    // Перехват события убийства NPC (зомби)
+    // Перехват событий
     HookEvent("npc_killed", Event_NPCKilled, EventHookMode_Post);
-    // Перехват события начала раунда для сброса статистики
     HookEvent("nmrih_round_begin", Event_RoundBegin, EventHookMode_Post);
     
+    // Создаем повторяющийся таймер обновления HUD каждую секунду
+    CreateTimer(1.0, Timer_UpdateHUD, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+    
     PrintToServer("NMRIH HUD Stats Plugin успешно загружен!");
+}
+
+public Action Timer_UpdateHUD(Handle timer, any data)
+{
+    UpdateHUDForAll();
+    return Plugin_Continue;
 }
 
 /**
