@@ -81,6 +81,8 @@ public Action Event_RoundBegin(Event event, const char[] name, bool dontBroadcas
 void UpdateHUDForAll()
 {
     SetHudTextParams(0.05, 0.2, 10.0, 200, 200, 200, 5, 0, 6.0, 0.5, 0.5);
+    sync = CreateHudSynchronizer();
+
 
     //HUDTextParams hudParams;
     //hudParams.x = 0.05;          // Расположение по горизонтали (слева)
@@ -119,7 +121,7 @@ void UpdateHUDForAll()
     {
         if (IsClientInGame(i))
         {
-            ShowHudText(i, hudParams, hudText);
+            ShowSyncHudText(i, sync, hudText);
         }
     }
 }
