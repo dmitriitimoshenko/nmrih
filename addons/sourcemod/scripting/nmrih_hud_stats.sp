@@ -13,8 +13,8 @@
 #include <sourcemod>
 #include <sdktools>
 
-new int g_MeleeKills[MAXPLAYERS+1];
-new int g_GunKills[MAXPLAYERS+1];
+int g_MeleeKills[MAXPLAYERS+1];
+int g_GunKills[MAXPLAYERS+1];
 
 public void OnPluginStart()
 {
