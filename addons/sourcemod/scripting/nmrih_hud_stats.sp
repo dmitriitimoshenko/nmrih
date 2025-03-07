@@ -80,14 +80,16 @@ public Action Event_RoundBegin(Event event, const char[] name, bool dontBroadcas
  */
 void UpdateHUDForAll()
 {
-    HUDTextParams hudParams;
-    hudParams.x = 0.05;          // Расположение по горизонтали (слева)
-    hudParams.y = 0.2;           // Расположение по вертикали
-    hudParams.holdTime = 10.0;   // Время отображения текста
-    hudParams.fadeInTime = 0.5;
-    hudParams.fadeOutTime = 0.5;
-    hudParams.channel = 4;       // Канал, который будет перезаписываться новым текстом
-    hudParams.effect = 0;        // Без спецэффектов
+    SetHudTextParams(0.05, 0.2, 10.0, 200, 200, 200, 5, 0, 6.0, fadeIn=0.5, 0.5);
+
+    //HUDTextParams hudParams;
+    //hudParams.x = 0.05;          // Расположение по горизонтали (слева)
+    //hudParams.y = 0.2;           // Расположение по вертикали
+    //hudParams.holdTime = 10.0;   // Время отображения текста
+    //hudParams.fadeInTime = 0.5;
+    //hudParams.fadeOutTime = 0.5;
+    //hudParams.channel = 4;       // Канал, который будет перезаписываться новым текстом
+    //hudParams.effect = 0;        // Без спецэффектов
 
     char hudText[2048];
     Format(hudText, sizeof(hudText), "Статистика убийств:\n");
