@@ -9,6 +9,7 @@ cfg/trusted_keys_base.txt
 cfg/user_default.scr
 cfg/valve.rc
 
+addons/
 bin/
 custom/
 detail.vbsp
