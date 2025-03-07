@@ -79,7 +79,7 @@ public Action Event_RoundBegin(Event event, const char[] name, bool dontBroadcas
  */
 void UpdateHUDForAll()
 {
-    HUDTextParams hudParams;
+    HudTextParams hudParams;
     hudParams.x = 0.05;          // Расположение по горизонтали (слева)
     hudParams.y = 0.2;           // Расположение по вертикали
     hudParams.holdTime = 10.0;   // Время отображения текста
