@@ -24,7 +24,7 @@ public void OnPluginStart()
     HookEvent("nmrih_round_begin", Event_RoundBegin, EventHookMode_Post);
     
     // Создаем повторяющийся таймер обновления HUD каждую секунду
-    CreateTimer(1.0, Timer_UpdateHUD, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+    CreateTimer(0.1, Timer_UpdateHUD, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
     
     PrintToServer("NMRIH HUD Stats Plugin успешно загружен!");
 }
@@ -42,13 +42,16 @@ public Action Timer_UpdateHUD(Handle timer, any data)
 public Action Event_NPCKilled(Event event, const char[] name, bool dontBroadcast)
 {
     int attacker = event.GetInt("attacker");
+
+    char weapon[64];
+    event.GetString("weapon", weapon, sizeof(weapon));
+
+    PrintToServer("npc killed: attacker=%d, weapon=%s", attacker, weapon);
+
     if (attacker <= 0 || !IsClientInGame(attacker))
     {
         return Plugin_Continue;
     }
-    
-    char weapon[64];
-    event.GetString("weapon", weapon, sizeof(weapon));
     
     // Если имя оружия начинается с "me_", считаем, что это холодное оружие
     if (StrContains(weapon, "me_", false) == 0)
