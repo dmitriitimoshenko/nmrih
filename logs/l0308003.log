@@ -1,0 +1,61 @@
+L 03/08/2025 - 02:50:50: Log file started (file "logs/L0308003.log") (game "/home/dmitrii/steamcmd/nmrih_server/nmrih") (version "1140")
+L 03/08/2025 - 02:50:55: "Дядя Вова<62><[U:1:1099283226]><>" entered the game
+L 03/08/2025 - 02:50:55: "Prazca<58><[U:1:1270149551]><>" entered the game
+L 03/08/2025 - 02:50:56: "Белый Медведь<59><[U:1:1851744608]><>" entered the game
+L 03/08/2025 - 02:50:56: "小猫喵<61><[U:1:1519246020]><>" entered the game
+L 03/08/2025 - 02:51:03: "Скумбрия<56><[U:1:911305736]><>" entered the game
+L 03/08/2025 - 02:52:51: "小猫喵<61><[U:1:1519246020]><>" committed suicide with "world"
+L 03/08/2025 - 02:54:25: "Белый Медведь<59><[U:1:1851744608]><#SDK_Team_Unassigned>" say "кому таблетки?"
+L 03/08/2025 - 02:54:40: "Белый Медведь<59><[U:1:1851744608]><#SDK_Team_Unassigned>" say "кому таблетки?"
+L 03/08/2025 - 02:54:50: "小猫喵<61><[U:1:1519246020]><>" committed suicide with "player"
+L 03/08/2025 - 02:55:45: "Prazca<58><[U:1:1270149551]><>" committed suicide with "world"
+L 03/08/2025 - 02:57:24: "Скумбрия<56><[U:1:911305736]><>" committed suicide with "world"
+L 03/08/2025 - 02:58:02: "小猫喵<61><[U:1:1519246020]><>" committed suicide with "world"
+L 03/08/2025 - 02:59:49: "Белый Медведь<59><[U:1:1851744608]><>" committed suicide with "world"
+L 03/08/2025 - 03:00:57: "Белый Медведь<59><[U:1:1851744608]><#SDK_Team_Unassigned>" say "вообще карт нет"
+L 03/08/2025 - 03:01:02: "Белый Медведь<59><[U:1:1851744608]><#SDK_Team_Unassigned>" say "F1 go"
+L 03/08/2025 - 03:01:04: Vote failed "changelevel nmo_lakeside" with code 3
+L 03/08/2025 - 03:01:40: "小猫喵<61><[U:1:1519246020]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/08/2025 - 03:01:40: "小猫喵<61><[U:1:1519246020]><>" committed suicide with "player"
+L 03/08/2025 - 03:01:51: "Скумбрия<56><[U:1:911305736]><>" committed suicide with "world"
+L 03/08/2025 - 03:02:06: Vote failed "nextlevel nmo_junction" with code 3
+L 03/08/2025 - 03:02:17: "Белый Медведь<59><[U:1:1851744608]><#SDK_Team_Unassigned>" say "!nmorandom"
+L 03/08/2025 - 03:02:23: "Белый Медведь<59><[U:1:1851744608]><#SDK_Team_Unassigned>" say "rtv"
+L 03/08/2025 - 03:02:24: "Скумбрия<56><[U:1:911305736]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/08/2025 - 03:02:24: "Скумбрия<56><[U:1:911305736]><>" committed suicide with "player"
+L 03/08/2025 - 03:03:12: "Prazca<58><[U:1:1270149551]><#SDK_Team_Unassigned>" disconnected (reason "Prazca timed out")
+L 03/08/2025 - 03:03:12: "Prazca<58><[U:1:1270149551]><>" committed suicide with "player"
+L 03/08/2025 - 03:03:21: "Белый Медведь<59><[U:1:1851744608]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/08/2025 - 03:03:21: "Белый Медведь<59><[U:1:1851744608]><>" committed suicide with "player"
+L 03/08/2025 - 03:21:49: "Дядя Вова<62><[U:1:1099283226]><>" committed suicide with "world"
+L 03/08/2025 - 03:23:12: "Дядя Вова<62><[U:1:1099283226]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/08/2025 - 03:23:12: "Дядя Вова<62><[U:1:1099283226]><>" committed suicide with "player"
+L 03/08/2025 - 03:45:14: "DACOOPER<64><[U:1:1782129841]><>" connected, address "98.249.208.192:27005"
+L 03/08/2025 - 03:45:14: "DACOOPER<64><[U:1:1782129841]><>" STEAM USERID validated
+L 03/08/2025 - 03:45:18: "DACOOPER<64><[U:1:1782129841]><>" entered the game
+L 03/08/2025 - 03:45:31: "DACOOPER<64><[U:1:1782129841]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/08/2025 - 03:45:31: "DACOOPER<64><[U:1:1782129841]><>" committed suicide with "player"
+L 03/08/2025 - 06:37:10: "白诩百笙<65><[U:1:1841195333]><>" connected, address "223.65.74.96:27877"
+L 03/08/2025 - 06:37:11: "白诩百笙<65><[U:1:1841195333]><>" STEAM USERID validated
+L 03/08/2025 - 06:37:16: "白诩百笙<65><[U:1:1841195333]><>" disconnected (reason "Connection closing")
+L 03/08/2025 - 06:37:16: "白诩百笙<66><[U:1:1841195333]><>" connected, address "223.65.74.96:27877"
+L 03/08/2025 - 06:37:17: "白诩百笙<66><[U:1:1841195333]><>" STEAM USERID validated
+L 03/08/2025 - 06:37:22: "白诩百笙<66><[U:1:1841195333]><>" entered the game
+L 03/08/2025 - 06:37:58: "白诩百笙<66><[U:1:1841195333]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/08/2025 - 06:37:58: "白诩百笙<66><[U:1:1841195333]><>" committed suicide with "player"
+L 03/08/2025 - 06:40:05: "The baby<67><[U:1:1054571778]><>" connected, address "178.46.66.134:2071"
+L 03/08/2025 - 06:40:05: "The baby<67><[U:1:1054571778]><>" STEAM USERID validated
+L 03/08/2025 - 06:40:13: "The baby<67><[U:1:1054571778]><>" entered the game
+L 03/08/2025 - 06:43:27: "白诩百笙<68><[U:1:1841195333]><>" connected, address "223.65.74.96:28411"
+L 03/08/2025 - 06:43:27: "白诩百笙<68><[U:1:1841195333]><>" STEAM USERID validated
+L 03/08/2025 - 06:43:32: "白诩百笙<68><[U:1:1841195333]><>" entered the game
+L 03/08/2025 - 06:43:45: "白诩百笙<68><[U:1:1841195333]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/08/2025 - 06:43:45: "白诩百笙<68><[U:1:1841195333]><>" committed suicide with "player"
+L 03/08/2025 - 06:50:46: "sby12820<69><[U:1:1677147871]><>" connected, address "124.52.118.7:27005"
+L 03/08/2025 - 06:50:46: "sby12820<69><[U:1:1677147871]><>" STEAM USERID validated
+L 03/08/2025 - 06:50:51: "sby12820<69><[U:1:1677147871]><>" entered the game
+L 03/08/2025 - 06:51:10: "sby12820<69><[U:1:1677147871]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/08/2025 - 06:55:38: Vote succeeded "changelevel nmo_shoreline"
+L 03/08/2025 - 06:55:40: "The baby<67><[U:1:1054571778]><>" committed suicide with "player"
+L 03/08/2025 - 06:55:40: [META] Loaded 0 plugins (1 already loaded)
+L 03/08/2025 - 06:55:41: Log file closed.

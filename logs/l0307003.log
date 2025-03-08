@@ -1,0 +1,64 @@
+L 03/07/2025 - 19:38:01: Log file started (file "logs/L0307003.log") (game "/home/dmitrii/steamcmd/nmrih_server/nmrih") (version "1140")
+L 03/07/2025 - 19:38:01: server_cvar: "sm_nextmap" "nmo_cleopas"
+L 03/07/2025 - 19:38:05: "White Cone<11><[U:1:274786136]><>" entered the game
+L 03/07/2025 - 19:38:07: "Romek Siekiera<19><[U:1:49641711]><>" entered the game
+L 03/07/2025 - 19:38:07: "ORBE<13><[U:1:167522292]><>" entered the game
+L 03/07/2025 - 19:38:08: "Thomas_Shelby<12><[U:1:1108508534]><>" entered the game
+L 03/07/2025 - 19:38:42: "Momy73<18><[U:1:1869479012]><>" entered the game
+L 03/07/2025 - 19:40:18: "PerlaMocna<22><[U:1:1121017625]><>" connected, address "213.134.191.135:38433"
+L 03/07/2025 - 19:40:18: "PerlaMocna<22><[U:1:1121017625]><>" STEAM USERID validated
+L 03/07/2025 - 19:40:29: "PerlaMocna<22><[U:1:1121017625]><>" entered the game
+L 03/07/2025 - 19:43:35: "PerlaMocna<22><[U:1:1121017625]><>" committed suicide with "player"
+L 03/07/2025 - 19:45:20: "Momy73<18><[U:1:1869479012]><>" committed suicide with "world"
+L 03/07/2025 - 19:45:32: "White Cone<11><[U:1:274786136]><>" committed suicide with "world"
+L 03/07/2025 - 19:45:43: "Momy73<18><[U:1:1869479012]><#SDK_Team_Unassigned>" disconnected (reason "Momy73 timed out")
+L 03/07/2025 - 19:45:43: "Momy73<18><[U:1:1869479012]><>" committed suicide with "player"
+L 03/07/2025 - 19:49:33: "Thomas_Shelby<12><[U:1:1108508534]><>" committed suicide with "world"
+L 03/07/2025 - 19:52:19: "PerlaMocna<22><[U:1:1121017625]><>" committed suicide with "world"
+L 03/07/2025 - 19:53:18: "White Cone<11><[U:1:274786136]><>" committed suicide with "player"
+L 03/07/2025 - 19:53:32: "PerlaMocna<22><[U:1:1121017625]><>" committed suicide with "world"
+L 03/07/2025 - 19:53:58: "3leonardorios<23><[U:1:1800843724]><>" connected, address "86.172.218.170:27005"
+L 03/07/2025 - 19:53:59: "3leonardorios<23><[U:1:1800843724]><>" STEAM USERID validated
+L 03/07/2025 - 19:54:01: "3leonardorios<23><[U:1:1800843724]><>" entered the game
+L 03/07/2025 - 19:54:18: "big_nigga<24><[U:1:1865895177]><>" connected, address "95.32.146.208:3119"
+L 03/07/2025 - 19:54:19: "big_nigga<24><[U:1:1865895177]><>" STEAM USERID validated
+L 03/07/2025 - 19:54:20: "Thomas_Shelby<12><[U:1:1108508534]><>" committed suicide with "world"
+L 03/07/2025 - 19:54:31: "big_nigga<24><[U:1:1865895177]><>" entered the game
+L 03/07/2025 - 19:54:31: "ORBE<13><[U:1:167522292]><>" committed suicide with "world"
+L 03/07/2025 - 19:54:50: "ORBE<13><[U:1:167522292]><>" killed "Romek Siekiera<19><[U:1:49641711]><>"
+L 03/07/2025 - 19:56:15: "ORBE<13><[U:1:167522292]><>" committed suicide with "world"
+L 03/07/2025 - 19:56:33: "PerlaMocna<22><[U:1:1121017625]><>" committed suicide with "player"
+L 03/07/2025 - 19:57:00: "big_nigga<24><[U:1:1865895177]><>" committed suicide with "world"
+L 03/07/2025 - 19:58:21: "3leonardorios<23><[U:1:1800843724]><>" committed suicide with "world"
+L 03/07/2025 - 19:58:35: "big_nigga<24><[U:1:1865895177]><>" committed suicide with "world"
+L 03/07/2025 - 19:59:47: "Alt<25><[U:1:1772998671]><>" connected, address "94.140.133.182:5482"
+L 03/07/2025 - 19:59:47: "Alt<25><[U:1:1772998671]><>" STEAM USERID validated
+L 03/07/2025 - 20:00:33: "Alt<25><[U:1:1772998671]><>" entered the game
+L 03/07/2025 - 20:01:40: "Romek Siekiera<19><[U:1:49641711]><>" killed "ORBE<13><[U:1:167522292]><>"
+L 03/07/2025 - 20:02:05: "ORBE<13><[U:1:167522292]><>" killed "Romek Siekiera<19><[U:1:49641711]><>"
+L 03/07/2025 - 20:03:30: "big_nigga<24><[U:1:1865895177]><>" committed suicide with "world"
+L 03/07/2025 - 20:03:49: "ORBE<13><[U:1:167522292]><>" committed suicide with "world"
+L 03/07/2025 - 20:06:27: "3leonardorios<23><[U:1:1800843724]><>" committed suicide with "world"
+L 03/07/2025 - 20:06:47: "Romek Siekiera<19><[U:1:49641711]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/07/2025 - 20:06:47: "Romek Siekiera<19><[U:1:49641711]><>" committed suicide with "player"
+L 03/07/2025 - 20:06:50: "Apolo<26><[U:1:315003678]><>" connected, address "79.117.235.20:27005"
+L 03/07/2025 - 20:06:51: "Apolo<26><[U:1:315003678]><>" STEAM USERID validated
+L 03/07/2025 - 20:06:55: "Apolo<26><[U:1:315003678]><>" entered the game
+L 03/07/2025 - 20:07:02: Vote failed "changelevel nmo_fema" with code 3
+L 03/07/2025 - 20:07:26: "Apolo<26><[U:1:315003678]><#SDK_Team_Unassigned>" say "ugh"
+L 03/07/2025 - 20:07:27: "Apolo<26><[U:1:315003678]><#SDK_Team_Unassigned>" say "agh"
+L 03/07/2025 - 20:07:29: "Apolo<26><[U:1:315003678]><#SDK_Team_Unassigned>" say "ogh"
+L 03/07/2025 - 20:07:30: "Apolo<26><[U:1:315003678]><#SDK_Team_Unassigned>" say "agh"
+L 03/07/2025 - 20:07:30: Vote succeeded "changelevel nmo_lakeside"
+L 03/07/2025 - 20:07:31: "Apolo<26><[U:1:315003678]><#SDK_Team_Unassigned>" say "ugh"
+L 03/07/2025 - 20:07:32: "Apolo<26><[U:1:315003678]><#SDK_Team_Unassigned>" say "agh"
+L 03/07/2025 - 20:07:32: "3leonardorios<23><[U:1:1800843724]><>" committed suicide with "player"
+L 03/07/2025 - 20:07:32: "Apolo<26><[U:1:315003678]><>" committed suicide with "player"
+L 03/07/2025 - 20:07:32: "PerlaMocna<22><[U:1:1121017625]><>" committed suicide with "player"
+L 03/07/2025 - 20:07:32: "White Cone<11><[U:1:274786136]><>" committed suicide with "player"
+L 03/07/2025 - 20:07:32: "Thomas_Shelby<12><[U:1:1108508534]><>" committed suicide with "player"
+L 03/07/2025 - 20:07:32: "ORBE<13><[U:1:167522292]><>" committed suicide with "player"
+L 03/07/2025 - 20:07:32: "big_nigga<24><[U:1:1865895177]><>" committed suicide with "player"
+L 03/07/2025 - 20:07:32: "Alt<25><[U:1:1772998671]><>" committed suicide with "player"
+L 03/07/2025 - 20:07:32: [META] Loaded 0 plugins (1 already loaded)
+L 03/07/2025 - 20:07:32: Log file closed.
