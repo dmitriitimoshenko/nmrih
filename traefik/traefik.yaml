@@ -1,0 +1,22 @@
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+certificatesResolvers:
+  myresolver:
+    acme:
+      email: "meistersservice@gmail.com"
+      storage: "/etc/traefik/acme/acme.json"
+      httpChallenge:
+        entryPoint: "web"
+
+log:
+  level: DEBUG
+  filePath: "/var/log/traefik/traefik.log"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false

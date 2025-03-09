@@ -1,6 +1,37 @@
 services:
+  traefik:
+      depends_on:
+        log_visualizer:
+          condition: service_healthy
+      build:
+        dockerfile: Dockerfile
+        context: traefik
+      image: "nmrih_traefik:latest"
+      container_name: nmrih_traefik
+      restart: on-failure
+      command:
+        - "--log.level=RELEASE"
+        - "--api.dashboard=false"
+        - "--api.insecure=false"
+        - "--entryPoints.http.address=:80"
+        - "--entryPoints.https.address=:443"
+        - "--providers.docker=true"
+        - "--providers.docker.exposedbydefault=false"
+        - "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=http"
+        - "--certificatesResolvers.myresolver.acme.email=meistersservice@gmail.com"
+        - "--certificatesResolvers.myresolver.acme.storage=/etc/traefik/acme/acme.json"
+      ports:
+        - "80:80"
+        - "443:443"
+      volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock:ro"
+        - "./traefik/acme.json:/etc/traefik/acme/acme.json"
+      networks:
+        - traefik-net
+
   log_parser:
     container_name: nmrih_log_parser
+    image: "nmrih_log_parser:latest"
     build:
       dockerfile: Dockerfile
       context: log_parser
@@ -8,15 +39,39 @@ services:
       - shared_data:/data
       - ./logs:/logs
     ports:
-      - "8090:8090"
+      - "8090"
+
   log_visualizer:
     container_name: nmrih_log_visualizer
+    image: "nmrih_log_visualizer:latest"
     build:
       dockerfile: Dockerfile
       context: log_visualizer
-    ports:
-      - "5000:5000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:5000/health-check | grep 200 || exit 1"]
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     volumes:
       - shared_data:/data
+    ports:
+      - "5000"
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      # HTTPS
+      - "traefik.http.routers.app-secure.rule=Host(`rulat-bot.duckdns.org`)"
+      - "traefik.http.routers.app-secure.entryPoints=https"
+      - "traefik.http.routers.app-secure.tls.certresolver=myresolver"
+      # HTTP
+      # - "traefik.http.routers.app.rule=Host(`meisters-service.duckdns.org`)"
+      # - "traefik.http.routers.app.entryPoints=http"
+
 volumes:
   shared_data:
+
+networks:
+  traefik-net:
+    driver: bridge

@@ -6,7 +6,7 @@ import os
 import glob
 
 from waitress import serve
-from flask import Flask, render_template_string, redirect, render_template
+from flask import Flask, redirect, render_template, jsonify
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -14,6 +14,11 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 
 CSV_DIR = '../data'
+
+@app.route('/healthcheck', methods=['GET'])
+def healthcheck():
+    """health check"""
+    return jsonify(status="healthy"), 200
 
 @app.route('/')
 def index():
