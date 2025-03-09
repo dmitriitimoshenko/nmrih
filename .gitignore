@@ -22,6 +22,9 @@ addons/sourcemod/LICENSE.txt
 addons/metamod_x64.vdf
 addons/metamod.vdf
 
+log_parser/cover.out
+log_parser/vendor/
+
 bin/
 custom/
 detail.vbsp
