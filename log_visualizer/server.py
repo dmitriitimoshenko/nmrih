@@ -15,7 +15,7 @@ app.config["DEBUG"] = True
 
 CSV_DIR = '../data'
 
-@app.route('/healthcheck', methods=['GET'])
+@app.route('/health-check', methods=['GET'])
 def healthcheck():
     """health check"""
     return jsonify(status="healthy"), 200
