@@ -9,14 +9,14 @@ services:
       - ./logs:/logs
     ports:
       - "8090:8090"
-  # log_visualizer:
-  #   container_name: nmrih_log_visualizer
-  #   build:
-  #     dockerfile: Dockerfile
-  #     context: log_visualizer
-  #   ports:
-  #     - "5000:5000"
-  #   volumes:
-  #     - shared_data:/data
+  log_visualizer:
+    container_name: nmrih_log_visualizer
+    build:
+      dockerfile: Dockerfile
+      context: log_visualizer
+    ports:
+      - "5000:5000"
+    volumes:
+      - shared_data:/data
 volumes:
   shared_data:

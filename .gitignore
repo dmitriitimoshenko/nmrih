@@ -72,4 +72,6 @@ scripts/
 servers/
 shaders/
 steam.inf
+addons/sourcemod/scripting/spcomp
+addons/sourcemod/scripting/spcomp64
 util/
