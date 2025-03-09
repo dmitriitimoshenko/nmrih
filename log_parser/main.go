@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/handlers"
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/ipapiclient"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/csvgenerator"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/csvrepository"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/logparser"
@@ -29,10 +30,13 @@ func main() {
 	logRepositoryService := logrepository.NewService()
 	csvGeneratorService := csvgenerator.NewCSVGenerator()
 	csvRepositoryService := csvrepository.NewService()
+	ipAPIClient := ipapiclient.NewIPAPIClient()
+
 	logParserService := logparser.NewService(
 		logRepositoryService,
 		csvGeneratorService,
 		csvRepositoryService,
+		ipAPIClient,
 	)
 
 	logparserhandler := handlers.NewLogParserHandler(logParserService)

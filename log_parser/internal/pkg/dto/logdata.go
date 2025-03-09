@@ -1,4 +1,4 @@
-package models
+package dto
 
 import (
 	"time"
@@ -11,4 +11,5 @@ type LogData struct {
 	NickName  string       `csv:"nickName"`
 	Action    enums.Action `csv:"action"`
 	IPAddress string       `csv:"ipAddress"`
+	Country   string       `csv:"country"`
 }

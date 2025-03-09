@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/dto"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/enums"
-	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/models"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/logrepository"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/tools"
 )
@@ -19,17 +20,20 @@ type Service struct {
 	logRepository LogRepository
 	csvGenerator  CSVGenerator
 	csvRepository CSVRepository
+	ipAPIClient   IPAPIClient
 }
 
 func NewService(
 	logRepository LogRepository,
 	csvGenerator CSVGenerator,
 	csvRepository CSVRepository,
+	ipAPIClient IPAPIClient,
 ) *Service {
 	return &Service{
 		logRepository: logRepository,
 		csvGenerator:  csvGenerator,
 		csvRepository: csvRepository,
+		ipAPIClient:   ipAPIClient,
 	}
 }
 
@@ -60,9 +64,9 @@ func (s *Service) Parse() error {
 	return nil
 }
 
-func (s *Service) mapLogs(logs map[string][]byte) ([]models.LogData, error) {
+func (s *Service) mapLogs(logs map[string][]byte) ([]dto.LogData, error) {
 	var (
-		logData []models.LogData
+		logData []dto.LogData
 		i       int
 	)
 
@@ -75,7 +79,7 @@ func (s *Service) mapLogs(logs map[string][]byte) ([]models.LogData, error) {
 			i++
 			line := scanner.Text()
 
-			logDataEntry := models.LogData{}
+			logDataEntry := dto.LogData{}
 			if strings.Contains(line, enums.Actions.Entered().String()) {
 				logDataEntry.Action = enums.Actions.Entered()
 			} else if strings.Contains(line, enums.Actions.Disconnected().String()) {
@@ -98,8 +102,16 @@ func (s *Service) mapLogs(logs map[string][]byte) ([]models.LogData, error) {
 				logDataEntry.NickName = line[26:strings.Index(line, "<")]
 				if logDataEntry.Action == enums.Actions.Connected() {
 					ipMatches := tools.IPRegex.FindAllString(line, -1)
+					if len(ipMatches) > 1 {
+						log.Println("[WARN] Found more than one IP address in the line [", i, "] of the file [", fileName, "]")
+					}
 					for _, ip := range ipMatches {
 						logDataEntry.IPAddress = ip
+						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
+						if err != nil {
+							return nil, fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
+						}
+						logDataEntry.Country = ipInfo.Country
 					}
 				}
 			}

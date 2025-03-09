@@ -24,9 +24,10 @@ func NewLogParserHandler(service Service) *Handler {
  */
 func (h *Handler) Parse(ctx *gin.Context) {
 	if err := h.service.Parse(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, struct{ err string }{err: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		ctx.Abort()
+		return
 	}
 
-	ctx.JSON(http.StatusOK, struct{ result string }{result: "ok"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Logs have been parsed successfully"})
 }
