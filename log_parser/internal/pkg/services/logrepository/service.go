@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	logsDirectory      = "../logs/"
-	logFileNamePattern = "l*.log"
+	logsStorageDirectory = "/logs/"
+	logFileNamePattern   = "l*.log"
 )
 
 type Service struct{}
@@ -18,7 +18,7 @@ func NewService() *Service {
 }
 
 func (s *Service) GetLogs() (map[string][]byte, error) {
-	pattern := filepath.Join(logsDirectory, logFileNamePattern)
+	pattern := filepath.Join(logsStorageDirectory, logFileNamePattern)
 	files, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for log files: %w", err)
