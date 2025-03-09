@@ -1,12 +1,13 @@
 package logparser
 
 import (
+	"time"
+
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/dto"
-	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/logrepository"
 )
 
 type LogRepository interface {
-	GetLogs(fiter *logrepository.Filter) (map[string][]byte, error)
+	GetLogs() (map[string][]byte, error)
 }
 
 type CSVGenerator interface {
@@ -14,7 +15,8 @@ type CSVGenerator interface {
 }
 
 type CSVRepository interface {
-	Save(data []byte) error
+	Save(data []byte, requestTimeStamp time.Time) error
+	GetLastSavedDate() (*time.Time, error)
 }
 
 type IPAPIClient interface {

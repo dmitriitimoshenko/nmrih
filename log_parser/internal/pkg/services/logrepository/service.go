@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 const (
@@ -14,16 +13,11 @@ const (
 
 type Service struct{}
 
-type Filter struct {
-	DateFrom *time.Time
-	DateTo   *time.Time
-}
-
 func NewService() *Service {
 	return &Service{}
 }
 
-func (s *Service) GetLogs(fiter *Filter) (map[string][]byte, error) {
+func (s *Service) GetLogs() (map[string][]byte, error) {
 	pattern := filepath.Join(logsDirectory, logFileNamePattern)
 	files, err := filepath.Glob(pattern)
 	if err != nil {

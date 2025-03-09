@@ -10,11 +10,8 @@ import (
 
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/dto"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/enums"
-	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/logrepository"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/tools"
 )
-
-const hoursInMonth = 24 * 30
 
 type Service struct {
 	logRepository LogRepository
@@ -37,19 +34,26 @@ func NewService(
 	}
 }
 
-func (s *Service) Parse() error {
-	dateFrom := time.Now().Add(time.Hour * hoursInMonth)
-	logs, err := s.logRepository.GetLogs(&logrepository.Filter{
-		DateFrom: &dateFrom,
-		DateTo:   nil,
-	})
+func (s *Service) Parse(requestTimeStamp time.Time) error {
+	dateFromPtr, err := s.csvRepository.GetLastSavedDate()
+	if err != nil {
+		return fmt.Errorf("failed to get last saved date: %w", err)
+	}
+	if dateFromPtr == nil {
+		dateFromPtr = tools.ToPtr(time.Date(2025, time.March, 1, 0, 0, 0, 0, time.Local))
+	}
+
+	logs, err := s.logRepository.GetLogs()
 	if err != nil {
 		return fmt.Errorf("failed to get logs: %w", err)
 	}
 
-	mappedLogs, err := s.mapLogs(logs)
+	mappedLogs, err := s.mapLogs(logs, *dateFromPtr)
 	if err != nil {
 		return fmt.Errorf("failed to structurize the logs: %w", err)
+	}
+	if len(mappedLogs) == 0 {
+		return nil
 	}
 
 	csvBytes, err := s.csvGenerator.Generate(mappedLogs)
@@ -57,14 +61,14 @@ func (s *Service) Parse() error {
 		return fmt.Errorf("failed to generate CSV: %w", err)
 	}
 
-	if err := s.csvRepository.Save(csvBytes); err != nil {
+	if err := s.csvRepository.Save(csvBytes, requestTimeStamp); err != nil {
 		return fmt.Errorf("failed to save mapped logs as CSV: %w", err)
 	}
 
 	return nil
 }
 
-func (s *Service) mapLogs(logs map[string][]byte) ([]dto.LogData, error) {
+func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, error) {
 	var (
 		logData []dto.LogData
 		i       int
@@ -72,6 +76,10 @@ func (s *Service) mapLogs(logs map[string][]byte) ([]dto.LogData, error) {
 
 	for fileName, page := range logs {
 		linesCount := s.countLines(page)
+		if linesCount == 0 {
+			continue
+		}
+
 		i = 0
 
 		scanner := bufio.NewScanner(bytes.NewReader(page))
@@ -94,12 +102,18 @@ func (s *Service) mapLogs(logs map[string][]byte) ([]dto.LogData, error) {
 
 			if linesCount > i {
 				timeStampStr := line[2:23]
+
 				parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
 				if err != nil {
 					return nil, fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
 				}
+				if parsedTime.Before(dateFrom) {
+					continue
+				}
+
 				logDataEntry.TimeStamp = parsedTime
 				logDataEntry.NickName = line[26:strings.Index(line, "<")]
+
 				if logDataEntry.Action == enums.Actions.Connected() {
 					ipMatches := tools.IPRegex.FindAllString(line, -1)
 					if len(ipMatches) > 1 {

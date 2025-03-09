@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,7 +24,9 @@ func NewLogParserHandler(service Service) *Handler {
  *   3. convert into csv files and save them in "../data/" files
  */
 func (h *Handler) Parse(ctx *gin.Context) {
-	if err := h.service.Parse(); err != nil {
+	requestTimeStamp := time.Now()
+
+	if err := h.service.Parse(requestTimeStamp); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		ctx.Abort()
 		return

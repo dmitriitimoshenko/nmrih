@@ -1,5 +1,7 @@
 package handlers
 
+import "time"
+
 type Service interface {
-	Parse() error
+	Parse(requestTimeStamp time.Time) error
 }
