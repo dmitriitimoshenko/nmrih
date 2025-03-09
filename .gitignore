@@ -25,7 +25,7 @@ addons/metamod.vdf
 log_parser/cover.out
 log_parser/vendor/
 
-log/
+logs/
 
 bin/
 custom/
