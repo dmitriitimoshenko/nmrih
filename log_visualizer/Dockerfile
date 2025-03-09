@@ -7,6 +7,4 @@ RUN pip install pylint
 
 COPY . /app
 
-EXPOSE $PORT
-
 CMD ["python3", "server.py"]
