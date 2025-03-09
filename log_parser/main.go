@@ -42,7 +42,7 @@ func main() {
 	logparserhandler := handlers.NewLogParserHandler(logParserService)
 
 	apiv1 := server.Group("/api/v1")
-	apiv1.POST("/parse", logparserhandler.Parse)
+	apiv1.GET("/parse", logparserhandler.Parse)
 
 	ports := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	err = server.Run(ports)

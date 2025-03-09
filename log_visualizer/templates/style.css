@@ -1,0 +1,187 @@
+html,
+body {
+    display: flex;
+    align-items: center;
+    font-family: sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+    background: #f3f3f3;
+    flex-direction: column;
+    margin: 0;
+}
+
+.main {
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    padding: 10px 20px;
+    transition: transform 0.2s;
+    width: 500px;
+    text-align: center;
+    margin: 8px;
+}
+
+h1 {
+    color: #3B1C6E;
+}
+
+.login-input-label {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    text-align: left;
+    color: #555;
+    font-weight: bold;
+}
+
+.login-input {
+    display: block;
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #d4bbff;
+    border-radius: 5px;
+}
+
+.main-button {
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    background-color: #5e4193;
+    width: 100%;
+    font-size: 16px;
+}
+
+.sub-button {
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    background-color: #d4bbff;
+    width: 100%;
+    font-size: 16px;
+}
+
+.wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.error-message {
+    border-radius: 7px;
+    margin-bottom: 15px;
+    border: 1px solid #af1919;
+    color: #af1919;
+    background-color: #fff3f3;
+    width: auto;
+    font-size: 14px;
+}
+
+.panel-grid-container {
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    padding: 10px 20px;
+    transition: transform 0.2s;
+    text-align: center;
+    margin: 8px;
+    display: grid;
+}
+
+.panel-grid-item {
+    padding: 15px;
+    border-radius: 10px;
+    margin: 8px;
+    background-color: white;
+    border: 1px solid #5e4193;
+    font-size: 20px;
+    text-align: center;
+}
+
+.panel-grid-textual-logo {
+    padding: 5px;
+    border-radius: 10px;
+    margin: 8px;
+    font-size: 30px;
+    text-align: center;
+}
+
+/* RADIO BUTTON STUFF BEGIN */
+
+.radio-container {
+    text-align: left;
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 22px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Hide the browser's default radio button */
+.radio-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Create a custom radio button */
+.radio-checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: #eee;
+    border-radius: 50%;
+}
+
+/* On mouse-over, add a grey background color */
+.radio-container:hover input ~ .radio-checkmark {
+    background-color: #ccc;
+}
+
+/* When the radio button is checked, add a blue background */
+.radio-container input:checked ~ .radio-checkmark {
+    background-color: #2196F3;
+}
+
+/* Create the indicator (the dot/circle - hidden when not checked) */
+.radio-checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the indicator (dot/circle) when checked */
+.radio-container input:checked ~ .radio-checkmark:after {
+    display: block;
+}
+
+/* Style the indicator (dot/circle) */
+.radio-container .radio-checkmark:after {
+    top: 9px;
+    left: 9px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+}
+
+/* RADIO BUTTON STUFF END */

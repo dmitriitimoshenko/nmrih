@@ -6,12 +6,12 @@ import os
 import glob
 
 from waitress import serve
-from flask import Flask, render_template_string, redirect
+from flask import Flask, render_template_string, redirect, render_template
 import pandas as pd
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
-app.config["DEBUG"] = False
+app.config["DEBUG"] = True
 
 CSV_DIR = '../data'
 
@@ -34,7 +34,7 @@ def dashboard():
     if df_list:
         df = pd.concat(df_list, ignore_index=True)
     else:
-        return render_template_string("<h1>No CSV files found in the directory.</h1>")
+        return render_template("dashboard.html")
     
     df['TimeStamp'] = pd.to_datetime(df['TimeStamp'])
     df = df.sort_values('TimeStamp')
@@ -81,20 +81,6 @@ def dashboard():
     img_base64 = base64.b64encode(buf.getvalue()).decode('utf8')
     plt.close(fig)
 
-    # Generate an HTML page with the image embedded
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Dashboard - Топ игроков по времени сессий</title>
-      </head>
-      <body>
-        <h1>Топ игроков по проведённому времени</h1>
-        <img src="data:image/png;base64,{img_base64}" alt="Бар-чарт">
-      </body>
-    </html>
-    """
-    return render_template_string(html)
+    return render_template("dashboard.html", img_base64=img_base64)
 
 serve(app, host="0.0.0.0", port=5000)
