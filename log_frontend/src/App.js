@@ -18,23 +18,25 @@ function App() {
       alert('Error on data refresh');
     } finally {
       setLoading(false);
+      // После завершения запроса и остановки анимации, перезагружаем страницу
+      window.location.reload();
     }
   };
 
   return (
     <div className="App">
-      <h1>Grash of top-time-spent players</h1>
+      <h1>Graph of Top-Time-Spent Players</h1>
       <div className="graph-container">
-        {/*adding a temp var*/}
         <img
-          src={`https://log-visualizer.rulat-bot.duckdns.org/graph`}
+          // Если хотите избежать кеширования, можно добавить параметр, например ?t=...
+          src={`https://log-visualizer.rulat-bot.duckdns.org/graph?t=${graphTimestamp}`}
           alt="Graph"
           className="graph-image"
         />
       </div>
       <div className="controls">
         <button onClick={refreshData} disabled={loading}>
-          {loading ? 'Refreshing...' : 'Refrash data'}
+          {loading ? 'Refreshing...' : 'Refresh Data'}
         </button>
         {loading && <div className="loader" />}
       </div>
