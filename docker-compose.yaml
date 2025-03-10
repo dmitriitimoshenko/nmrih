@@ -25,7 +25,7 @@ services:
         - "443:443"
       volumes:
         - "/var/run/docker.sock:/var/run/docker.sock:ro"
-        - "./traefik/acme.json:/etc/traefik/acme/acme.json"
+        - "./traefik/acme:/etc/traefik/acme"
       networks:
         - traefik-net
 
