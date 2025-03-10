@@ -41,6 +41,12 @@ func main() {
 
 	logparserhandler := handlers.NewLogParserHandler(logParserService)
 
+	server.GET("/health-check", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "OK",
+		})
+	})
+
 	apiv1 := server.Group("/api/v1")
 	apiv1.GET("/parse", logparserhandler.Parse)
 

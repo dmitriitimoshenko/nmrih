@@ -3,6 +3,8 @@ services:
       depends_on:
         log_visualizer:
           condition: service_healthy
+        log_parser:
+          condition: service_healthy
       build:
         dockerfile: Dockerfile
         context: traefik
@@ -35,11 +37,27 @@ services:
     build:
       dockerfile: Dockerfile
       context: log_parser
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8090/health-check | grep 200 || exit 1"]
+      timeout: 3s
+      retries: 3
+      start_period: 3s
     volumes:
       - shared_data:/data
       - ./logs:/logs
     ports:
       - "8090"
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      # HTTPS
+      - "traefik.http.routers.log_visualizer-secure.rule=Host(`rulat-bot.duckdns.org`)"
+      - "traefik.http.routers.log_visualizer-secure.entryPoints=https"
+      - "traefik.http.routers.log_visualizer-secure.tls.certresolver=myresolver"
+      # HTTP
+      # - "traefik.http.routers.log_visualizer.rule=Host(`rulat-bot.duckdns.org`)"
+      # - "traefik.http.routers.log_visualizer.entryPoints=http"
 
   log_visualizer:
     container_name: nmrih_log_visualizer
@@ -49,7 +67,6 @@ services:
       context: log_visualizer
     healthcheck:
       test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:5000/health-check | grep 200 || exit 1"]
-      # interval: 60s
       timeout: 3s
       retries: 3
       start_period: 3s
