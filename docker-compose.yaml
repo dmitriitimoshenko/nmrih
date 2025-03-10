@@ -19,13 +19,13 @@ services:
         - "--providers.docker.exposedbydefault=false"
         - "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=http"
         - "--certificatesResolvers.myresolver.acme.email=meistersservice@gmail.com"
-        - "--certificatesResolvers.myresolver.acme.storage=/etc/traefik/acme/acme.json"
+        - "--certificatesResolvers.myresolver.acme.storage=/etc/traefik/acme/"
       ports:
         - "80:80"
         - "443:443"
       volumes:
         - "/var/run/docker.sock:/var/run/docker.sock:ro"
-        - "./traefik/acme.json:/etc/traefik/acme/acme.json"
+        - "./traefik/acme.json:./etc/traefik/acme/acme.json"
       networks:
         - traefik-net
 
