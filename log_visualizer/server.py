@@ -30,14 +30,9 @@ def healthcheck():
     """health check"""
     return jsonify(status="healthy"), 200
 
-@app.route('/')
-def index():
-    """will return the dashboard page"""
-    return redirect('/dashboard')
-
-@app.route('/dashboard', methods=['GET'])
+@app.route('/graph', methods=['GET'])
 def dashboard():
-    """dashboard page has informative graphs on it"""
+    """graph returns a picture of a graph build from csv data"""
 
     csv_files = glob.glob(os.path.join(CSV_DIR, '*.csv'))
     
