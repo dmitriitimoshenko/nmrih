@@ -4,6 +4,7 @@ import './App.css';
 function App() {
   const [loading, setLoading] = useState(false);
   const [graphTimestamp, setGraphTimestamp] = useState(Date.now());
+  const [imgError, setImgError] = useState(false);
 
   const refreshData = async () => {
     setLoading(true);
@@ -22,15 +23,24 @@ function App() {
     }
   };
 
+  const handleImgError = () => {
+    setImgError(true);
+  };
+
   return (
     <div className="App">
       <h1>Graph of Top-Time-Spent Players</h1>
       <div className="graph-container">
-        <img
-          src={`https://log-visualizer.rulat-bot.duckdns.org/graph?t=${graphTimestamp}`}
-          alt="Graph"
-          className="graph-image"
-        />
+        {imgError ? (
+          <div style={{ fontSize: '100px' }}>📉</div>
+        ) : (
+          <img
+            src={`https://log-visualizer.rulat-bot.duckdns.org/graph?t=${graphTimestamp}`}
+            alt="Graph"
+            className="graph-image"
+            onError={handleImgError}
+          />
+        )}
       </div>
       <div className="controls">
         <button onClick={refreshData} disabled={loading}>
