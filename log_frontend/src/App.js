@@ -23,7 +23,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>График данных</h1>
+      <h1>Grash of top-time-spent players</h1>
       <div className="graph-container">
         {/*adding a temp var*/}
         <img
