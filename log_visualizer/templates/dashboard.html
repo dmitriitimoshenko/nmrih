@@ -6,11 +6,11 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     <script>
       function refreshLogParser() {
-        fetch("http://localhost:8090/api/v1/parse")
+        fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/parse")
           .then(response => {
             console.log("Логи обновлены", response);
             // Обновляем страницу через 20 секунд после вызова
-            setTimeout(() => { window.location.reload(); }, 20000);
+            setTimeout(() => { window.location.reload(); }, 2000);
           })
           .catch(error => {
             console.error("Ошибка обновления логов", error);
