@@ -18,7 +18,6 @@ function App() {
       alert('Error on data refresh');
     } finally {
       setLoading(false);
-      // После завершения запроса и остановки анимации, перезагружаем страницу
       window.location.reload();
     }
   };
@@ -28,7 +27,6 @@ function App() {
       <h1>Graph of Top-Time-Spent Players</h1>
       <div className="graph-container">
         <img
-          // Если хотите избежать кеширования, можно добавить параметр, например ?t=...
           src={`https://log-visualizer.rulat-bot.duckdns.org/graph?t=${graphTimestamp}`}
           alt="Graph"
           className="graph-image"
