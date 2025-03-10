@@ -94,11 +94,11 @@ log_frontend:
     -traefik-net
   labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.log_visualizer-secure.tls=true"
+    - "traefik.http.routers.log_frontend-secure.tls=true"
     # HTTPS
-    - "traefik.http.routers.log_visualizer-secure.rule=Host(`rulat-bot.duckdns.org`)"
-    - "traefik.http.routers.log_visualizer-secure.entryPoints=https"
-    - "traefik.http.routers.log_visualizer-secure.tls.certresolver=myresolver"
+    - "traefik.http.routers.log_frontend-secure.rule=Host(`rulat-bot.duckdns.org`)"
+    - "traefik.http.routers.log_frontend-secure.entryPoints=https"
+    - "traefik.http.routers.log_frontend-secure.tls.certresolver=myresolver"
 
 volumes:
   shared_data:
