@@ -21,7 +21,7 @@ func CORSMiddleware() gin.HandlerFunc {
         c.Writer.Header().Set("Access-Control-Allow-Origin", "https://rulat-bot.duckdns.org")
         c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        // Если это preflight-запрос, завершаем обработку
+
         if c.Request.Method == "OPTIONS" {
             c.AbortWithStatus(204)
             return

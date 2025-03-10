@@ -93,7 +93,6 @@ def dashboard():
     buf = io.BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     buf.seek(0)
-    # img_base64 = base64.b64encode(buf.getvalue()).decode('utf8')
     plt.close(fig)
 
     return Response(buf.getvalue(), mimetype='image/png')
