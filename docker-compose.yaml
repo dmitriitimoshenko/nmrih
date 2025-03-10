@@ -62,12 +62,12 @@ services:
     labels:
       - "traefik.enable=true"
       # HTTPS
-      - "traefik.http.routers.app-secure.rule=Host(`rulat-bot.duckdns.org`)"
-      - "traefik.http.routers.app-secure.entryPoints=https"
-      - "traefik.http.routers.app-secure.tls.certresolver=myresolver"
+      - "traefik.http.routers.log_visualizer-secure.rule=Host(`rulat-bot.duckdns.org`)"
+      - "traefik.http.routers.log_visualizer-secure.entryPoints=https"
+      - "traefik.http.routers.log_visualizer-secure.tls.certresolver=myresolver"
       # HTTP
-      # - "traefik.http.routers.app.rule=Host(`rulat-bot.duckdns.org`)"
-      # - "traefik.http.routers.app.entryPoints=http"
+      # - "traefik.http.routers.log_visualizer.rule=Host(`rulat-bot.duckdns.org`)"
+      # - "traefik.http.routers.log_visualizer.entryPoints=http"
 
 volumes:
   shared_data:
