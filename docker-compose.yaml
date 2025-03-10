@@ -42,7 +42,7 @@ services:
       start_period: 3s
     volumes:
       - shared_data:/data
-      # - ./logs:/logs
+      - ./logs:/logs
     ports:
       - "8090"
     networks:
