@@ -20,6 +20,7 @@ jobs:
           password: ${{ secrets.REMOTE_PASSWORD }}
           port: 22
           script: |
+            cd ~/steamcmd/nmrih_server/nmrih/
             git pull origin main
             make docker-re-run
             make docker-clean-up
