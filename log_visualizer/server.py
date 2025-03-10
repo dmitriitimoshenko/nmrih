@@ -6,28 +6,33 @@ import os
 import glob
 
 from waitress import serve
-from flask import Flask, redirect, render_template, jsonify
+from flask import Flask, redirect, render_template, jsonify, Response
+from flask_cors import CORS
 import pandas as pd
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
 
+CORS(app, resources={r"/*": {"origins": "https://rulat-bot.duckdns.org"}})
+
 CSV_DIR = '../data'
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "https://rulat-bot.duckdns.org"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
 
 @app.route('/health-check', methods=['GET'])
 def healthcheck():
     """health check"""
     return jsonify(status="healthy"), 200
 
-@app.route('/')
-def index():
-    """will return the dashboard page"""
-    return redirect('/dashboard')
-
-@app.route('/dashboard', methods=['GET'])
+@app.route('/graph', methods=['GET'])
 def dashboard():
-    """dashboard page has informative graphs on it"""
+    """graph returns a picture of a graph build from csv data"""
 
     csv_files = glob.glob(os.path.join(CSV_DIR, '*.csv'))
     
@@ -83,9 +88,8 @@ def dashboard():
     buf = io.BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     buf.seek(0)
-    img_base64 = base64.b64encode(buf.getvalue()).decode('utf8')
     plt.close(fig)
 
-    return render_template("dashboard.html", img_base64=img_base64)
+    return Response(buf.getvalue(), mimetype='image/png')
 
 serve(app, host="0.0.0.0", port=5000)

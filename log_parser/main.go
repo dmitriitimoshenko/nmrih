@@ -16,6 +16,20 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func CORSMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "https://rulat-bot.duckdns.org")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(204)
+            return
+        }
+        c.Next()
+    }
+}
+
 func main() {
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -25,6 +39,8 @@ func main() {
 	server := gin.Default()
 	server.Use(gin.Logger())
 	server.Use(gin.Recovery())
+	server.Use(CORSMiddleware())
+
 	gin.SetMode(os.Getenv("GIN_MODE"))
 
 	logRepositoryService := logrepository.NewService()
