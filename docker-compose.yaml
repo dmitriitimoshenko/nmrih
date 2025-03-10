@@ -35,11 +35,24 @@ services:
     build:
       dockerfile: Dockerfile
       context: log_parser
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8090/health-check | grep 200 || exit 1"]
+      timeout: 3s
+      retries: 3
+      start_period: 3s
     volumes:
       - shared_data:/data
       - ./logs:/logs
     ports:
       - "8090"
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.log_parser-secure.rule=Host(`log-parser.rulat-bot.duckdns.org`)"
+      - "traefik.http.routers.log_parser-secure.entryPoints=https"
+      - "traefik.http.routers.log_parser-secure.tls=true"
+      - "traefik.http.routers.log_parser-secure.tls.certresolver=myresolver"
 
   log_visualizer:
     container_name: nmrih_log_visualizer
