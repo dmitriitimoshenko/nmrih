@@ -20,7 +20,6 @@ jobs:
           password: ${{ secrets.REMOTE_PASSWORD }}
           port: 22
           script: |
-            cd nmrih
             git pull origin main
             make docker-re-run
             make docker-clean-up
