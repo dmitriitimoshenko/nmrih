@@ -7,13 +7,23 @@ import glob
 
 from waitress import serve
 from flask import Flask, redirect, render_template, jsonify, Response
+from flask_cors import CORS
 import pandas as pd
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
 
+CORS(app, resources={r"/*": {"origins": "https://rulat-bot.duckdns.org"}})
+
 CSV_DIR = '../data'
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "https://rulat-bot.duckdns.org"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
 
 @app.route('/health-check', methods=['GET'])
 def healthcheck():
