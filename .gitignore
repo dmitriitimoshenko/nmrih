@@ -25,6 +25,8 @@ addons/metamod.vdf
 log_parser/cover.out
 log_parser/vendor/
 
+traefik/acme/
+
 logs/
 
 bin/
