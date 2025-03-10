@@ -73,13 +73,32 @@ services:
       - traefik-net
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.log_visualizer-secure.tls=true"
       # HTTPS
-      - "traefik.http.routers.log_visualizer-secure.rule=Host(`rulat-bot.duckdns.org`)"
+      - "traefik.http.routers.log_visualizer-secure.rule=Host(`log-visualizer.rulat-bot.duckdns.org`)"
       - "traefik.http.routers.log_visualizer-secure.entryPoints=https"
       - "traefik.http.routers.log_visualizer-secure.tls.certresolver=myresolver"
       # HTTP
       # - "traefik.http.routers.log_visualizer.rule=Host(`rulat-bot.duckdns.org`)"
       # - "traefik.http.routers.log_visualizer.entryPoints=http"
+
+log_frontend:
+  container_name: nmrih_log_frontend
+  image: nmrih_log_frontend:latest
+  build:
+    dockerfile: Dockerfile
+    context: log_frontend
+  ports:
+    - "8091"
+  networks:
+    -traefik-net
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.log_visualizer-secure.tls=true"
+    # HTTPS
+    - "traefik.http.routers.log_visualizer-secure.rule=Host(`rulat-bot.duckdns.org`)"
+    - "traefik.http.routers.log_visualizer-secure.entryPoints=https"
+    - "traefik.http.routers.log_visualizer-secure.tls.certresolver=myresolver"
 
 volumes:
   shared_data:

@@ -6,7 +6,7 @@ import os
 import glob
 
 from waitress import serve
-from flask import Flask, redirect, render_template, jsonify
+from flask import Flask, redirect, render_template, jsonify, Response
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -83,9 +83,9 @@ def dashboard():
     buf = io.BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     buf.seek(0)
-    img_base64 = base64.b64encode(buf.getvalue()).decode('utf8')
+    # img_base64 = base64.b64encode(buf.getvalue()).decode('utf8')
     plt.close(fig)
 
-    return render_template("dashboard.html", img_base64=img_base64)
+    return Response(buf.getvalue(), mimetype='image/png')
 
 serve(app, host="0.0.0.0", port=5000)
