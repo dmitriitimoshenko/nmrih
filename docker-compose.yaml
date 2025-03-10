@@ -10,7 +10,7 @@ services:
       container_name: nmrih_traefik
       restart: on-failure
       command:
-        - "--log.level=RELEASE"
+        - "--log.level=DEBUG"
         - "--api.dashboard=false"
         - "--api.insecure=false"
         - "--entryPoints.http.address=:80"
@@ -66,7 +66,7 @@ services:
       - "traefik.http.routers.app-secure.entryPoints=https"
       - "traefik.http.routers.app-secure.tls.certresolver=myresolver"
       # HTTP
-      # - "traefik.http.routers.app.rule=Host(`meisters-service.duckdns.org`)"
+      # - "traefik.http.routers.app.rule=Host(`rulat-bot.duckdns.org`)"
       # - "traefik.http.routers.app.entryPoints=http"
 
 volumes:
