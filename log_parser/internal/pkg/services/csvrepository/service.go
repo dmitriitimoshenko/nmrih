@@ -1,9 +1,11 @@
 package csvrepository
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -16,18 +18,13 @@ func NewService() *Service {
 }
 
 func (s *Service) Save(csvBytes []byte, requestTimeStamp time.Time) error {
-	// Ensure the directory exists
 	if err := os.MkdirAll(csvStorageDirectory, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	// Define the file name
 	fileName := fmt.Sprintf("logs_%s.csv", requestTimeStamp.Format("2006-01-02_15:04:05"))
-
-	// Define the file path
 	filePath := filepath.Join(csvStorageDirectory, fileName)
 
-	// Write the CSV data to the file
 	if err := os.WriteFile(filePath, csvBytes, 0644); err != nil {
 		return fmt.Errorf("failed to write CSV file: %w", err)
 	}
@@ -47,7 +44,7 @@ func (s *Service) GetLastSavedDate() (*time.Time, error) {
 	var lastTime time.Time
 	for _, file := range files {
 		name := file.Name()
-		// logs_2006-01-02_15:04:05.csv
+		// example: logs_2006-01-02_15:04:05.csv
 		dateString := name[5:24]
 		parsedTime, err := time.Parse("2006-01-02_15:04:05", dateString)
 		if err != nil {
@@ -59,4 +56,35 @@ func (s *Service) GetLastSavedDate() (*time.Time, error) {
 	}
 
 	return &lastTime, nil
+}
+
+func (s *Service) GetAllCSVData() ([]byte, error) {
+	files, err := os.ReadDir(csvStorageDirectory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	var combined bytes.Buffer
+	firstFile := true
+
+	for _, file := range files {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".csv") {
+			filePath := filepath.Join(csvStorageDirectory, file.Name())
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+			}
+
+			if !firstFile {
+				if pos := bytes.IndexByte(content, '\n'); pos != -1 && pos+1 < len(content) {
+					content = content[pos+1:]
+				}
+			}
+			combined.Write(content)
+			combined.WriteString("\n")
+			firstFile = false
+		}
+	}
+
+	return combined.Bytes(), nil
 }

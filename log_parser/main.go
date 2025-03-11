@@ -5,9 +5,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/handlers"
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/handlers/loggraphhandler"
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/handlers/logparserhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/ipapiclient"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/csvgenerator"
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/csvparser"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/csvrepository"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/logparser"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/logrepository"
@@ -17,17 +19,17 @@ import (
 )
 
 func CORSMiddleware() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        c.Writer.Header().Set("Access-Control-Allow-Origin", "https://rulat-bot.duckdns.org")
-        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "https://rulat-bot.duckdns.org")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-        if c.Request.Method == "OPTIONS" {
-            c.AbortWithStatus(204)
-            return
-        }
-        c.Next()
-    }
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	}
 }
 
 func main() {
@@ -46,6 +48,7 @@ func main() {
 	logRepositoryService := logrepository.NewService()
 	csvGeneratorService := csvgenerator.NewCSVGenerator()
 	csvRepositoryService := csvrepository.NewService()
+	csvParserService := csvparser.NewService()
 	ipAPIClient := ipapiclient.NewIPAPIClient()
 
 	logParserService := logparser.NewService(
@@ -55,7 +58,8 @@ func main() {
 		ipAPIClient,
 	)
 
-	logparserhandler := handlers.NewLogParserHandler(logParserService)
+	logparserhandler := logparserhandler.NewLogParserHandler(logParserService)
+	loggraphhandler := loggraphhandler.NewLogGraphHandler(csvRepositoryService, csvParserService)
 
 	server.GET("/health-check", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -65,6 +69,7 @@ func main() {
 
 	apiv1 := server.Group("/api/v1")
 	apiv1.GET("/parse", logparserhandler.Parse)
+	apiv1.GET("/graph", loggraphhandler.Graph)
 
 	ports := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	err = server.Run(ports)
