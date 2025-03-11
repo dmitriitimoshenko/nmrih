@@ -80,8 +80,8 @@ def dashboard():
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.bar(players, durations)
     ax.set_xlabel('NickName')
-    ax.set_ylabel('Время сессии (сек.)')
-    ax.set_title('Топ игроков по проведённому времени')
+    ax.set_ylabel('Session duration')
+    ax.set_title('Top-Time-Spent Players')
     plt.xticks(rotation=45, ha='right')
 
     # Save the plot to a buffer and encode it in base64 for HTML embedding
