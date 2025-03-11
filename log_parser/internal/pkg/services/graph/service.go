@@ -73,6 +73,9 @@ func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
 		return topTimeSpentList[i].TimeSpent > topTimeSpentList[j].TimeSpent
 	})
 
+	if len(topTimeSpentList) <= topPlayersCount {
+		return topTimeSpentList
+	}
 	return topTimeSpentList[:topPlayersCount]
 }
 
