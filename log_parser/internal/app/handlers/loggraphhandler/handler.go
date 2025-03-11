@@ -21,8 +21,8 @@ func NewLogGraphHandler(csvRepository CSVRepository, csvParser CSVParser, graphS
 }
 
 func (h *Handler) Graph(ctx *gin.Context) {
-	graphType := ctx.Query("type")
-	if graphType != "top-time-spent" && graphType != "top-country" {
+	graphType, ok := ctx.GetQuery("type")
+	if !ok || (graphType != "top-time-spent" && graphType != "top-country") {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid graph type"})
 		ctx.Abort()
 		return
