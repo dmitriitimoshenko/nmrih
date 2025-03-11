@@ -45,10 +45,12 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		{
 			result := h.graphService.TopTimeSpent(logs)
 			ctx.JSON(http.StatusOK, gin.H{"data": result})
+			return
 		}
 	case "top-country":
 		{
 			ctx.JSON(http.StatusOK, gin.H{"data": "bad type"})
+			return
 		}
 	}
 
