@@ -68,7 +68,6 @@ func (s *Service) GetAllCSVData() ([]byte, error) {
 	firstFile := true
 
 	for _, file := range files {
-		// Обрабатываем только файлы с расширением .csv
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".csv") {
 			filePath := filepath.Join(csvStorageDirectory, file.Name())
 			content, err := os.ReadFile(filePath)
@@ -76,7 +75,6 @@ func (s *Service) GetAllCSVData() ([]byte, error) {
 				return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
 			}
 
-			// Если это не первый файл, то пропускаем строку заголовка
 			if !firstFile {
 				if pos := bytes.IndexByte(content, '\n'); pos != -1 && pos+1 < len(content) {
 					content = content[pos+1:]
