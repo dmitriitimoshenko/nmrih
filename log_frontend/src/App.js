@@ -9,7 +9,7 @@ function App() {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://log-parser.rulat-bot.duckdns.org/api/v1/parse');
+      const response = await fetch('https://log-parser.rulat-bot.duckdns.org/api/v1/parse?t=${Date.now()}');
       if (!response.ok) {
         throw new Error('Error on API call');
       }

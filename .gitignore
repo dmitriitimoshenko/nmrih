@@ -29,6 +29,8 @@ traefik/acme/
 
 logs/
 
+console.log
+
 bin/
 custom/
 detail.vbsp
