@@ -87,13 +87,13 @@ def top_time_spent_players():
     ax.set_title('Top-Time-Spent Players')
     plt.xticks(rotation=45, ha='right')
 
-    # Save the chart to a buffer and return it as an image
+    # Save the chart to a buffer as a JPEG image and return it as an image
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight')
+    plt.savefig(buf, format='jpeg', bbox_inches='tight')
     buf.seek(0)
     plt.close(fig)
 
-    return Response(buf.getvalue(), mimetype='image/png')
+    return Response(buf.getvalue(), mimetype='image/jpeg')
 
 @app.route('/graph/top-counties-connected', methods=['GET'])
 def top_counties_connected():
@@ -156,12 +156,13 @@ def top_counties_connected():
         ax.axis('equal')
         ax.set_title('Top Countries by Sessions (>30 sec)')
 
+    # Save the pie chart to a buffer as a JPEG image and return it as an image
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight')
+    plt.savefig(buf, format='jpeg', bbox_inches='tight')
     buf.seek(0)
     plt.close(fig)
 
-    return Response(buf.getvalue(), mimetype='image/png')
+    return Response(buf.getvalue(), mimetype='image/jpeg')
 
 # Start the server on port 5000
 serve(app, host="0.0.0.0", port=5000)
