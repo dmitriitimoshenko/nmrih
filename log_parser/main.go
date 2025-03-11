@@ -11,6 +11,7 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/csvgenerator"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/csvparser"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/csvrepository"
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/graph"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/logparser"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/services/logrepository"
 
@@ -49,6 +50,7 @@ func main() {
 	csvGeneratorService := csvgenerator.NewCSVGenerator()
 	csvRepositoryService := csvrepository.NewService()
 	csvParserService := csvparser.NewService()
+	graphService := graph.NewService()
 	ipAPIClient := ipapiclient.NewIPAPIClient()
 
 	logParserService := logparser.NewService(
@@ -59,7 +61,7 @@ func main() {
 	)
 
 	logparserhandler := logparserhandler.NewLogParserHandler(logParserService)
-	loggraphhandler := loggraphhandler.NewLogGraphHandler(csvRepositoryService, csvParserService)
+	loggraphhandler := loggraphhandler.NewLogGraphHandler(csvRepositoryService, csvParserService, graphService)
 
 	server.GET("/health-check", func(c *gin.Context) {
 		c.JSON(200, gin.H{

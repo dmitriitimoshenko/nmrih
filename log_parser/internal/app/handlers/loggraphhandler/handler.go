@@ -9,16 +9,24 @@ import (
 type Handler struct {
 	csvRepository CSVRepository
 	csvParser     CSVParser
+	graphService  GraphService
 }
 
-func NewLogGraphHandler(csvRepository CSVRepository, csvParser CSVParser) *Handler {
+func NewLogGraphHandler(csvRepository CSVRepository, csvParser CSVParser, graphService GraphService) *Handler {
 	return &Handler{
 		csvRepository: csvRepository,
 		csvParser:     csvParser,
+		graphService:  graphService,
 	}
 }
 
 func (h *Handler) Graph(ctx *gin.Context) {
+	graphType := ctx.Query("type")
+	if graphType != "top-time-spent" && graphType != "top-country" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid graph type"})
+		ctx.Abort()
+		return
+	}
 	data, err := h.csvRepository.GetAllCSVData()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -31,5 +39,18 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": logs})
+
+	switch graphType {
+	case "top-time-spent":
+		{
+			result := h.graphService.TopTimeSpent(logs)
+			ctx.JSON(http.StatusOK, gin.H{"data": result})
+		}
+	case "top-country":
+		{
+			ctx.JSON(http.StatusOK, gin.H{"data": "bad type"})
+		}
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": "none"})
 }

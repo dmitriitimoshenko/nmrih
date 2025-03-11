@@ -9,3 +9,7 @@ type CSVRepository interface {
 type CSVParser interface {
 	Parse(data []byte) ([]*dto.LogData, error)
 }
+
+type GraphService interface {
+	TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList
+}
