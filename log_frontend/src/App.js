@@ -1,72 +1,89 @@
-import React, { useState } from 'react';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
+} from 'recharts';
 
-function App() {
+const App = () => {
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [graphTimestamp, setGraphTimestamp] = useState(Date.now());
-  const [imgError, setImgError] = useState(false);
 
-  const refreshData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('https://log-parser.rulat-bot.duckdns.org/api/v1/parse?t=${graphTimestamp}');
-      if (!response.ok) {
-        throw new Error('Error on API call');
-      }
-      setGraphTimestamp(Date.now());
-    } catch (error) {
-      console.error(error);
-      alert('Error on data refresh');
-    } finally {
-      setLoading(false);
-      window.location.reload();
-    }
+  // Функция для получения данных графика
+  const fetchGraphData = () => {
+    fetch('https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=top-time-spent')
+      .then(response => response.json())
+      .then(data => {
+        const convertedData = data.data.map(item => ({
+          ...item,
+          time_spent: item.time_spent / 1e9  // перевод из наносекунд в секунды
+        }));
+        setChartData(convertedData);
+      })
+      .catch(error => {
+        console.error('Ошибка при получении данных графика:', error);
+      });
   };
 
-  const handleImgError = () => {
-    setImgError(true);
+  useEffect(() => {
+    fetchGraphData();
+  }, []);
+
+  // Функция для обновления данных: вызов parse endpoint с graphTimestamp и затем обновление графика
+  const handleRefresh = () => {
+    setLoading(true);
+    const graphTimestamp = Date.now(); // текущий timestamp (в миллисекундах)
+    fetch(`https://log-parser.rulat-bot.duckdns.org/api/v1/parse?t=${graphTimestamp}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Ошибка при вызове parse endpoint');
+        }
+        return response.json();
+      })
+      .then(() => {
+        // После успешного вызова parse, обновляем данные графика
+        fetchGraphData();
+      })
+      .catch(error => {
+        console.error('Ошибка при обновлении данных:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
-    <div className="App">
-      {/* Graph for Top-Time-Spent Players using the new endpoint */}
-      <h1>Graph of Top-Time-Spent Players</h1>
-      <div className="graph-container">
-        {imgError ? (
-          <div style={{ fontSize: '100px' }}>📉</div>
-        ) : (
-          <img
-            src={`https://log-visualizer.rulat-bot.duckdns.org/graph/top-time-spent-players?t=${graphTimestamp}`}
-            alt="Top-Time-Spent Players Graph"
-            className="graph-image"
-            onError={handleImgError}
-          />
-        )}
-      </div>
-
-      {/* Additional graph for Top Countries by sessions (>30 sec) */}
-      <h1>Graph of Top Countries by Sessions (&gt;30 sec)</h1>
-      <div className="graph-container">
-        {imgError ? (
-          <div style={{ fontSize: '100px' }}>📉</div>
-        ) : (
-          <img
-            src={`https://log-visualizer.rulat-bot.duckdns.org/graph/top-counties-connected?t=${graphTimestamp}`}
-            alt="Top Countries Graph"
-            className="graph-image"
-            onError={handleImgError}
-          />
-        )}
-      </div>
-
-      <div className="controls">
-        <button onClick={refreshData} disabled={loading}>
-          {loading ? 'Refreshing...' : 'Refresh Data'}
-        </button>
-        {loading && <div className="loader" />}
-      </div>
+    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+      <h1>Столбчатый график времени</h1>
+      <button onClick={handleRefresh} disabled={loading}>
+        {loading ? 'Обновление...' : 'Обновить'}
+      </button>
+      <BarChart
+        width={600}
+        height={300}
+        data={chartData}
+        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        style={{ margin: '0 auto', marginTop: '20px' }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="nick_name" />
+        <YAxis
+          label={{
+            value: 'Время (сек)',
+            angle: -90,
+            position: 'insideLeft'
+          }}
+        />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="time_spent" fill="#8884d8" />
+      </BarChart>
     </div>
   );
-}
+};
 
 export default App;
