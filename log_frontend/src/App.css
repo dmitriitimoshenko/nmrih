@@ -3,9 +3,17 @@
   padding: 20px;
 }
 
-.graph-container {
+/* .graph-container {
   margin: 20px auto;
   max-width: 800px;
+} */
+
+.graph-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 16px; /* adds some horizontal padding on mobile */
+  box-sizing: border-box;
 }
 
 .graph-image {
@@ -37,7 +45,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Простая анимация загрузки (спиннер) */
 .loader {
   border: 4px solid #f3f3f3;
   border-top: 4px solid #3498db;
