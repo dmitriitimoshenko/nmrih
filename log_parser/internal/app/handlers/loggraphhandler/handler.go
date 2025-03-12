@@ -1,6 +1,7 @@
 package loggraphhandler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -39,6 +40,8 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+
+	log.Printf("[Graph Handler] Logs: %+v", logs)
 
 	switch graphType {
 	case "top-time-spent":
