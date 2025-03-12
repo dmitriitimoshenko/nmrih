@@ -43,7 +43,11 @@ func (h *Handler) Graph(ctx *gin.Context) {
 
 	log.Println("[Graph Handler] Logs:")
 	for i, logE := range logs {
-		log.Printf("[Graph Handler] [%d]: %v", i+1, *logE)
+		if logE != nil {
+			log.Printf("[Graph Handler] [%d]: %v", i+1, *logE)
+		} else {
+			log.Printf("[Graph Handler] [%d]: {{{ EMPTY }}}", i+1)
+		}
 	}
 
 	switch graphType {
