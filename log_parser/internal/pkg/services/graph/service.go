@@ -62,6 +62,8 @@ func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
 		}
 	}
 
+	log.Printf("TotalSessionsDurations: %+v\n", totalSessionsDurations)
+
 	topTimeSpentList := make(dto.TopTimeSpentList, 0, len(totalSessionsDurations))
 	for nickName, totalSessionsDuration := range totalSessionsDurations {
 		topTimeSpentList = append(topTimeSpentList, &dto.TopTimeSpent{
@@ -77,7 +79,9 @@ func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
 	if len(topTimeSpentList) > topPlayersCount {
 		topTimeSpentList = topTimeSpentList[:topPlayersCount]
 	}
+
 	log.Printf("TopTimeSpent: %+v\n", topTimeSpentList)
+
 	return topTimeSpentList
 }
 
