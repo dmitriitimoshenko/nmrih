@@ -1,7 +1,7 @@
 services:
   traefik:
       depends_on:
-        log_visualizer:
+        log_parser:
           condition: service_healthy
       build:
         dockerfile: Dockerfile
