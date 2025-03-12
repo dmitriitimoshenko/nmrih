@@ -8,8 +8,9 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Top time-spent players</h1>
+      <h1>Krich Casual NMRiH Server Dashboard</h1>
       <Controls onRefresh={refreshData} loading={loading} />
+      <h3>Top time-spent players</h3>
       <div className="graph-container">
         <Chart data={chartData} />
       </div>
