@@ -62,6 +62,29 @@ func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
 		}
 	}
 
+	if len(lastConnected) > 0 {
+		// If there are still connected users at the end of the logs
+		// Add their current session duration to the total
+		for nickName, lastConnectedTimeStamp := range lastConnected {
+			lastActivityTimeStamp := s.findLastUserActivityTimeStampBefore(
+				logs,
+				lastConnectedTimeStamp,
+				nickName,
+			)
+			if lastActivityTimeStamp == nil {
+				// Impossible sceanrio, but just in case
+				// If there is no activity at all before the current (second in line) connection, skip
+				continue
+			}
+			s.addDurationToTotal(
+				nickName,
+				*lastActivityTimeStamp,
+				lastConnected,
+				totalSessionsDurations,
+			)
+		}
+	}
+
 	log.Printf("[TopTimeSpent] TotalSessionsDurations: %+v\n", totalSessionsDurations)
 
 	topTimeSpentList := make(dto.TopTimeSpentList, 0, len(totalSessionsDurations))
