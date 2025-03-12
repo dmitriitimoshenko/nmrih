@@ -10,7 +10,6 @@ const CountryPieChart = () => {
     fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=top-country")
       .then(response => response.json())
       .then(jsonData => {
-        // Expect jsonData to be of the form { data: [ {country, percentage}, ... ] }
         if (jsonData && jsonData.data) {
           setData(jsonData.data);
         }
@@ -34,9 +33,10 @@ const CountryPieChart = () => {
             nameKey="country"
             cx="50%"
             cy="50%"
-            outerRadius={150}  // Diameter ~300px; adjust as needed to fit within 400px height
+            outerRadius={150}
             fill="#8884d8"
-            label
+            label={false}
+            labelLine={false}
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
