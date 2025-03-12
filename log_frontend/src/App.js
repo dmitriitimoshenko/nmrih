@@ -14,19 +14,18 @@ const App = () => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Функция для получения данных графика
   const fetchGraphData = () => {
     fetch('https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=top-time-spent')
       .then(response => response.json())
       .then(data => {
         const convertedData = data.data.map(item => ({
           ...item,
-          time_spent: item.time_spent / 1e9  // перевод из наносекунд в секунды
+          time_spent: Number(((item.time_spent / 1e9) / 3600).toFixed(1))
         }));
         setChartData(convertedData);
       })
       .catch(error => {
-        console.error('Ошибка при получении данных графика:', error);
+        console.error('Error fetching graph data:', error);
       });
   };
 
@@ -34,23 +33,21 @@ const App = () => {
     fetchGraphData();
   }, []);
 
-  // Функция для обновления данных: вызов parse endpoint и обновление графика
   const handleRefresh = () => {
     setLoading(true);
-    const graphTimestamp = Date.now(); // текущий timestamp в миллисекундах
+    const graphTimestamp = Date.now();
     fetch(`https://log-parser.rulat-bot.duckdns.org/api/v1/parse?t=${graphTimestamp}`)
       .then(response => {
         if (!response.ok) {
-          throw new Error('Ошибка при вызове parse endpoint');
+          throw new Error('Error calling /parse endpoint');
         }
         return response.json();
       })
       .then(() => {
-        // После успешного вызова parse, обновляем данные графика
         fetchGraphData();
       })
       .catch(error => {
-        console.error('Ошибка при обновлении данных:', error);
+        console.error('Error while data refresh:', error);
       })
       .finally(() => {
         setLoading(false);
@@ -59,10 +56,10 @@ const App = () => {
 
   return (
     <div className="App">
-      <h1>Столбчатый график времени</h1>
+      <h1>Top time-spent players</h1>
       <div className="controls">
         <button onClick={handleRefresh} disabled={loading}>
-          {loading ? 'Обновление...' : 'Обновить'}
+          {loading ? 'Refreshing...' : 'Refresh Data'}
         </button>
         {loading && <div className="loader"></div>}
       </div>
@@ -77,7 +74,7 @@ const App = () => {
           <XAxis dataKey="nick_name" />
           <YAxis
             label={{
-              value: 'Время (сек)',
+              value: 'Time (hours)',
               angle: -90,
               position: 'insideLeft'
             }}
