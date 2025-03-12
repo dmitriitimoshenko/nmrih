@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/dto"
@@ -24,6 +25,11 @@ func (c *CSVGenerator) Generate(logData []dto.LogData) ([]byte, *time.Time, erro
 	if err := writer.Write(header); err != nil {
 		return nil, nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
+
+	// Sort logs by TimeStamp (earlier first)
+	sort.Slice(logData, func(i, j int) bool {
+		return logData[i].TimeStamp.Before(logData[j].TimeStamp)
+	})
 
 	// Write CSV rows
 	for _, data := range logData {
