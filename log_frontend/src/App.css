@@ -33,10 +33,13 @@ body, .App {
   margin-top: 10px;
 }
 
-.graph-container,
-.pie-chart-container {
+.graph-container {
   width: 100%;
   padding: 0 16px;
   box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.pie-chart-container {
   margin: 0 auto;
 }

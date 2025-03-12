@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import React, { useEffect, useState } from 'react';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28FD0', '#FF6666', '#66B3FF', '#FFCC99', '#66FF66', '#D0D0D0'];
 
@@ -9,18 +9,23 @@ const CountryPieChart = () => {
   useEffect(() => {
     fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=top-country")
       .then(response => response.json())
-      .then(json => {
-        if (json && json.data) {
-          setData(json.data);
+      .then(jsonData => {
+        // Expect jsonData to be of the form { data: [ {country, percentage}, ... ] }
+        if (jsonData && jsonData.data) {
+          setData(jsonData.data);
         }
       })
-      .catch(error => {
-        console.error("Error fetching pie chart data", error);
+      .catch(err => {
+        console.error("Error fetching pie chart data:", err);
       });
   }, []);
 
+  if (!data || data.length === 0) {
+    return <p style={{ color: '#fff' }}>No data available for the pie chart.</p>;
+  }
+
   return (
-    <div className="pie-chart-container">
+    <div className="pie-chart-container" style={{ margin: '0 auto', maxWidth: '400px', height: '400px' }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -29,7 +34,7 @@ const CountryPieChart = () => {
             nameKey="country"
             cx="50%"
             cy="50%"
-            outerRadius={180}  // Adjusts the diameter; 2*180 = 360px, within 400px height
+            outerRadius={150}  // Diameter ~300px; adjust as needed to fit within 400px height
             fill="#8884d8"
             label
           >
