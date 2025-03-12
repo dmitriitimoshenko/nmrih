@@ -59,7 +59,8 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		}
 	case "top-country":
 		{
-			ctx.JSON(http.StatusOK, gin.H{"data": "bad type"})
+			result := h.graphService.TopCountries(logs)
+			ctx.JSON(http.StatusOK, gin.H{"data": result})
 			return
 		}
 	}

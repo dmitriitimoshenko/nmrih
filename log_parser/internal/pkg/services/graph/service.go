@@ -9,7 +9,10 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/enums"
 )
 
-const topPlayersCount = 32
+const (
+	topPlayersCount = 32
+	topCountries    = 9
+)
 
 type Service struct{}
 
@@ -153,4 +156,56 @@ func (s *Service) findLastUserActivityTimeStamp(
 		return nil
 	}
 	return &lastActivity
+}
+
+func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageList {
+	countriesConnectionsList := make(map[string]int)
+	var allConnectionsCount int
+
+	for _, logEntry := range logs {
+		if logEntry.Action == enums.Actions.Connected() {
+			if logEntry.Country == "" {
+				countriesConnectionsList["Unknown"]++
+			}
+			countriesConnectionsList[logEntry.Country]++
+			allConnectionsCount++
+		}
+	}
+
+	topCountriesList := make(dto.TopCountriesList, 0, topCountries)
+	for range topCountries {
+		var (
+			maxConnectionsCount   int
+			maxConnectionsCountry string
+		)
+		for country, connectionsCount := range countriesConnectionsList {
+			if connectionsCount > maxConnectionsCount {
+				maxConnectionsCount = connectionsCount
+				maxConnectionsCountry = country
+			}
+		}
+		topCountriesList = append(topCountriesList, dto.TopCountry{
+			Country:          maxConnectionsCountry,
+			ConnectionsCount: maxConnectionsCount,
+		})
+		delete(countriesConnectionsList, maxConnectionsCountry)
+	}
+
+	topCountriesPercentageList := make(dto.TopCountriesPercentageList, 0, len(topCountriesList))
+	otherPercentage := 100.0
+	for _, topCountry := range topCountriesList {
+		percentage := float64(topCountry.ConnectionsCount) / float64(allConnectionsCount) * 100
+		otherPercentage -= percentage
+		topCountriesPercentageList = append(topCountriesPercentageList, dto.TopCountriesPercentage{
+			Country:    topCountry.Country,
+			Percentage: percentage,
+		})
+	}
+
+	topCountriesPercentageList = append(topCountriesPercentageList, dto.TopCountriesPercentage{
+		Country:    "Other",
+		Percentage: otherPercentage,
+	})
+
+	return topCountriesPercentageList
 }

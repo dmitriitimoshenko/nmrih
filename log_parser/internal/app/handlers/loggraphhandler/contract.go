@@ -12,4 +12,5 @@ type CSVParser interface {
 
 type GraphService interface {
 	TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList
+	TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageList
 }
