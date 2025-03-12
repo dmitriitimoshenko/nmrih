@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend
 } from 'recharts';
+import './App.css';
 
 const App = () => {
   const [chartData, setChartData] = useState([]);
@@ -33,10 +34,10 @@ const App = () => {
     fetchGraphData();
   }, []);
 
-  // Функция для обновления данных: вызов parse endpoint с graphTimestamp и затем обновление графика
+  // Функция для обновления данных: вызов parse endpoint и обновление графика
   const handleRefresh = () => {
     setLoading(true);
-    const graphTimestamp = Date.now(); // текущий timestamp (в миллисекундах)
+    const graphTimestamp = Date.now(); // текущий timestamp в миллисекундах
     fetch(`https://log-parser.rulat-bot.duckdns.org/api/v1/parse?t=${graphTimestamp}`)
       .then(response => {
         if (!response.ok) {
@@ -57,31 +58,35 @@ const App = () => {
   };
 
   return (
-    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+    <div className="App">
       <h1>Столбчатый график времени</h1>
-      <button onClick={handleRefresh} disabled={loading}>
-        {loading ? 'Обновление...' : 'Обновить'}
-      </button>
-      <BarChart
-        width={600}
-        height={300}
-        data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        style={{ margin: '0 auto', marginTop: '20px' }}
-      >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="nick_name" />
-        <YAxis
-          label={{
-            value: 'Время (сек)',
-            angle: -90,
-            position: 'insideLeft'
-          }}
-        />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="time_spent" fill="#8884d8" />
-      </BarChart>
+      <div className="controls">
+        <button onClick={handleRefresh} disabled={loading}>
+          {loading ? 'Обновление...' : 'Обновить'}
+        </button>
+        {loading && <div className="loader"></div>}
+      </div>
+      <div className="graph-container">
+        <BarChart
+          width={800}
+          height={400}
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="nick_name" />
+          <YAxis
+            label={{
+              value: 'Время (сек)',
+              angle: -90,
+              position: 'insideLeft'
+            }}
+          />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="time_spent" fill="#8884d8" />
+        </BarChart>
+      </div>
     </div>
   );
 };
