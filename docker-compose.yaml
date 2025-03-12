@@ -54,34 +54,6 @@ services:
       - "traefik.http.routers.log_parser-secure.tls=true"
       - "traefik.http.routers.log_parser-secure.tls.certresolver=myresolver"
 
-  log_visualizer:
-    container_name: nmrih_log_visualizer
-    image: "nmrih_log_visualizer:latest"
-    build:
-      dockerfile: Dockerfile
-      context: log_visualizer
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:5000/health-check | grep 200 || exit 1"]
-      timeout: 3s
-      retries: 3
-      start_period: 3s
-    volumes:
-      - shared_data:/data
-    ports:
-      - "5000"
-    networks:
-      - traefik-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.log_visualizer-secure.tls=true"
-      # HTTPS
-      - "traefik.http.routers.log_visualizer-secure.rule=Host(`log-visualizer.rulat-bot.duckdns.org`)"
-      - "traefik.http.routers.log_visualizer-secure.entryPoints=https"
-      - "traefik.http.routers.log_visualizer-secure.tls.certresolver=myresolver"
-      # HTTP
-      # - "traefik.http.routers.log_visualizer.rule=Host(`rulat-bot.duckdns.org`)"
-      # - "traefik.http.routers.log_visualizer.entryPoints=http"
-
   log_frontend:
     container_name: nmrih_log_frontend
     image: nmrih_log_frontend:latest
@@ -99,6 +71,36 @@ services:
       - "traefik.http.routers.log_frontend-secure.rule=Host(`rulat-bot.duckdns.org`)"
       - "traefik.http.routers.log_frontend-secure.entryPoints=https"
       - "traefik.http.routers.log_frontend-secure.tls.certresolver=myresolver"
+
+  # DEPRECATED
+  
+  # log_visualizer:
+  #   container_name: nmrih_log_visualizer
+  #   image: "nmrih_log_visualizer:latest"
+  #   build:
+  #     dockerfile: Dockerfile
+  #     context: log_visualizer
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:5000/health-check | grep 200 || exit 1"]
+  #     timeout: 3s
+  #     retries: 3
+  #     start_period: 3s
+  #   volumes:
+  #     - shared_data:/data
+  #   ports:
+  #     - "5000"
+  #   networks:
+  #     - traefik-net
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.log_visualizer-secure.tls=true"
+  #     # HTTPS
+  #     - "traefik.http.routers.log_visualizer-secure.rule=Host(`log-visualizer.rulat-bot.duckdns.org`)"
+  #     - "traefik.http.routers.log_visualizer-secure.entryPoints=https"
+  #     - "traefik.http.routers.log_visualizer-secure.tls.certresolver=myresolver"
+  #     # HTTP
+  #     # - "traefik.http.routers.log_visualizer.rule=Host(`rulat-bot.duckdns.org`)"
+  #     # - "traefik.http.routers.log_visualizer.entryPoints=http"
 
 volumes:
   shared_data:
