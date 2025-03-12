@@ -42,7 +42,10 @@ const CountryPieChart = () => {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip contentStyle={{ backgroundColor: "#333", border: "none", color: "#fff" }} />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#333", border: "none", color: "#fff" }}
+            formatter={(value, name) => [`${Number(value).toFixed(2)}%`, name]}
+          />
           <Legend wrapperStyle={{ color: "#fff" }} />
         </PieChart>
       </ResponsiveContainer>
