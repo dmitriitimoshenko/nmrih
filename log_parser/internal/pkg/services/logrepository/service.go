@@ -25,7 +25,7 @@ func (s *Service) GetLogs() (map[string][]byte, error) {
 		return nil, fmt.Errorf("failed to search for log files: %w", err)
 	}
 
-	log.Println("files found: ", files)
+	log.Println("[LogRepositoryService] Count of files found: ", files)
 	if files == nil {
 		return nil, nil
 	}

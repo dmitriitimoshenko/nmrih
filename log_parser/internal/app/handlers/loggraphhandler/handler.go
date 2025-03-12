@@ -41,7 +41,7 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	log.Println("[Graph Handler] Logs:")
+	log.Println("[GraphHandler] Logs:")
 	for i, logE := range logs {
 		if logE != nil {
 			log.Printf("[Graph Handler] [%d]: %v", i+1, *logE)

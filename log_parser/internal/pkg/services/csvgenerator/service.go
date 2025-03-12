@@ -20,18 +20,15 @@ func (c *CSVGenerator) Generate(logData []dto.LogData) ([]byte, *time.Time, erro
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 
-	// Write CSV header
 	header := []string{"TimeStamp", "NickName", "Action", "IPAddress", "Country"}
 	if err := writer.Write(header); err != nil {
 		return nil, nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
-	// Sort logs by TimeStamp (earlier first)
 	sort.Slice(logData, func(i, j int) bool {
 		return logData[i].TimeStamp.Before(logData[j].TimeStamp)
 	})
 
-	// Write CSV rows
 	for _, data := range logData {
 		row := []string{
 			data.TimeStamp.Format("2006-01-02 15:04:05"),
@@ -45,7 +42,6 @@ func (c *CSVGenerator) Generate(logData []dto.LogData) ([]byte, *time.Time, erro
 		}
 	}
 
-	// Flush the writer
 	writer.Flush()
 	if err := writer.Error(); err != nil {
 		return nil, nil, fmt.Errorf("failed to flush CSV writer: %w", err)
