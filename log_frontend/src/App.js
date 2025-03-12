@@ -64,25 +64,25 @@ const App = () => {
         {loading && <div className="loader"></div>}
       </div>
       <div className="graph-container">
-        <BarChart
-          width={800}
-          height={400}
-          data={chartData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="nick_name" />
-          <YAxis
-            label={{
-              value: 'Time (hours)',
-              angle: -90,
-              position: 'insideLeft'
-            }}
-          />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="time_spent" fill="#8884d8" />
-        </BarChart>
+        <ResponsiveContainer width="100%" height={400}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="nick_name" />
+              <YAxis
+                label={{
+                  value: 'Time (hours)',
+                  angle: -90,
+                  position: 'insideLeft'
+                }}
+              />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="time_spent" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
       </div>
     </div>
   );
