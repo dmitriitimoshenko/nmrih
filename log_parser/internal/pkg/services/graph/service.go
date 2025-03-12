@@ -65,10 +65,9 @@ func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
 	if len(lastConnected) > 0 {
 		// If there are still connected users at the end of the logs
 		// Add their current session duration to the total
-		for nickName, lastConnectedTimeStamp := range lastConnected {
-			lastActivityTimeStamp := s.findLastUserActivityTimeStampBefore(
+		for nickName, _ := range lastConnected {
+			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(
 				logs,
-				lastConnectedTimeStamp,
 				nickName,
 			)
 			if lastActivityTimeStamp == nil {
@@ -130,6 +129,23 @@ func (s *Service) findLastUserActivityTimeStampBefore(
 			if entry.TimeStamp.After(lastActivity) {
 				lastActivity = entry.TimeStamp
 			}
+		}
+	}
+
+	if lastActivity.IsZero() {
+		return nil
+	}
+	return &lastActivity
+}
+
+func (s *Service) findLastUserActivityTimeStamp(
+	logs []*dto.LogData,
+	nickName string,
+) *time.Time {
+	var lastActivity time.Time
+	for _, entry := range logs {
+		if entry.NickName == nickName && entry.TimeStamp.After(lastActivity) {
+			lastActivity = entry.TimeStamp
 		}
 	}
 
