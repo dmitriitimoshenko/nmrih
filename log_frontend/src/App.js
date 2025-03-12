@@ -70,17 +70,19 @@ const App = () => {
             data={chartData}
             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="nick_name" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+            <XAxis dataKey="nick_name" stroke="#fff" />
             <YAxis
+              stroke="#fff"
               label={{
                 value: 'Time (hours)',
                 angle: -90,
-                position: 'insideLeft'
+                position: 'insideLeft',
+                fill: "#fff"
               }}
             />
-            <Tooltip />
-            <Legend />
+            <Tooltip contentStyle={{ backgroundColor: "#333", border: "none", color: "#fff" }} />
+            <Legend wrapperStyle={{ color: "#fff" }} />
             <Bar dataKey="time_spent" fill="#8884d8" />
           </BarChart>
         </ResponsiveContainer>
