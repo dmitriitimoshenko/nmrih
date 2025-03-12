@@ -8,7 +8,7 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/enums"
 )
 
-const topPlayersCount = 10
+const topPlayersCount = 100
 
 type Service struct{}
 
