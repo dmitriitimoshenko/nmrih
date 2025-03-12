@@ -43,30 +43,54 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 		dateFromPtr = tools.ToPtr(time.Date(2025, time.March, 1, 0, 0, 0, 0, time.Local))
 	}
 
+	log.Printf("[LogParseService] Parsing logs from %s\n", dateFromPtr.Format("2006-01-02 15:04:05"))
+
 	logs, err := s.logRepository.GetLogs()
 	if err != nil {
 		return fmt.Errorf("failed to get logs: %w", err)
 	}
 
+	log.Printf("[LogParseService] Found %d logs\n", len(logs))
+
 	mappedLogs, err := s.mapLogs(logs, *dateFromPtr)
 	if err != nil {
 		return fmt.Errorf("failed to structurize the logs: %w", err)
 	}
+
+	log.Printf("[LogParseService] Mapped %d logs\n", len(mappedLogs))
+
 	if len(mappedLogs) == 0 {
 		return nil
 	}
+
+	log.Print("[LogParseService] Mapped logs are going to get into CSV\n")
 
 	csvBytes, lastLogTime, err := s.csvGenerator.Generate(mappedLogs)
 	if err != nil {
 		return fmt.Errorf("failed to generate CSV: %w", err)
 	}
+
+	log.Printf(
+		"[LogParseService] Generated CSV with data (not null: %v)\n",
+		csvBytes != nil,
+	)
+	if lastLogTime == nil {
+		log.Print("[LogParseService] Last log time is nil\n")
+	} else {
+		log.Printf("[LogParseService] Last log time is %s\n", lastLogTime.Format("2006-01-02 15:04:05"))
+	}
+
 	if lastLogTime == nil {
 		lastLogTime = &requestTimeStamp
 	}
 
+	log.Printf("[LogParseService] Last log time is ANYWAY %s\n", lastLogTime.Format("2006-01-02 15:04:05"))
+
 	if err := s.csvRepository.Save(csvBytes, *lastLogTime); err != nil {
 		return fmt.Errorf("failed to save mapped logs as CSV: %w", err)
 	}
+
+	log.Print("[LogParseService] Saved CSV\n")
 
 	return nil
 }
@@ -110,7 +134,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				if err != nil {
 					return nil, fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
 				}
-				if parsedTime.Before(dateFrom) {
+				if !parsedTime.After(dateFrom) {
 					continue
 				}
 
