@@ -1,5 +1,6 @@
 import React from 'react';
-import Chart from './components/Chart';
+import TopTimeChart from './components/TopTimeChart';
+import CountryPieChart from './components/CountryPieChart';
 import Controls from './components/Controls';
 import useGraphData from './hooks/useGraphData';
 
@@ -10,9 +11,15 @@ function App() {
     <div className="App">
       <h1>Krich Casual NMRiH Server Dashboard</h1>
       <Controls onRefresh={refreshData} loading={loading} />
-      <h3>Top time-spent players</h3>
+      
+      <h3>Top Time-spent Players</h3>
       <div className="graph-container">
-        <Chart data={chartData} />
+        <TopTimeChart data={chartData} />
+      </div>
+
+      <h3>Top Countries</h3>
+      <div className="pie-chart-container">
+        <CountryPieChart />
       </div>
     </div>
   );
