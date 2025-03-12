@@ -4,10 +4,10 @@ body, .App {
   background-color: #000;
   color: #fff;
   font-family: Arial, sans-serif;
+  text-align: center;
 }
 
 .App {
-  text-align: center;
   padding: 20px;
 }
 
@@ -21,8 +21,8 @@ body, .App {
   border: none;
   padding: 10px 20px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
   border-radius: 4px;
+  transition: background-color 0.3s ease;
 }
 
 .controls button:hover:not(:disabled) {
