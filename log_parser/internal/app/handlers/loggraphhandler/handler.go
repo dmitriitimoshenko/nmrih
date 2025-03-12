@@ -41,7 +41,10 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	log.Printf("[Graph Handler] Logs: %+v", logs)
+	log.Println("[Graph Handler] Logs:")
+	for i, logE := range logs {
+		log.Printf("[Graph Handler] [%d]: %v", i+1, *logE)
+	}
 
 	switch graphType {
 	case "top-time-spent":
