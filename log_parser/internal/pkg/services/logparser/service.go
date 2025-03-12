@@ -56,12 +56,15 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 		return nil
 	}
 
-	csvBytes, err := s.csvGenerator.Generate(mappedLogs)
+	csvBytes, lastLogTime, err := s.csvGenerator.Generate(mappedLogs)
 	if err != nil {
 		return fmt.Errorf("failed to generate CSV: %w", err)
 	}
+	if lastLogTime == nil {
+		lastLogTime = &requestTimeStamp
+	}
 
-	if err := s.csvRepository.Save(csvBytes, requestTimeStamp); err != nil {
+	if err := s.csvRepository.Save(csvBytes, *lastLogTime); err != nil {
 		return fmt.Errorf("failed to save mapped logs as CSV: %w", err)
 	}
 

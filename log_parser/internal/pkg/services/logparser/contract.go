@@ -11,7 +11,7 @@ type LogRepository interface {
 }
 
 type CSVGenerator interface {
-	Generate(logData []dto.LogData) ([]byte, error)
+	Generate(logData []dto.LogData) ([]byte, *time.Time, error)
 }
 
 type CSVRepository interface {
