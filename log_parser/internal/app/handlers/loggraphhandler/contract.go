@@ -1,6 +1,8 @@
 package loggraphhandler
 
-import "github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/dto"
+import (
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/dto"
+)
 
 type CSVRepository interface {
 	GetAllCSVData() ([]byte, error)
@@ -13,4 +15,5 @@ type CSVParser interface {
 type GraphService interface {
 	TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList
 	TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageList
+	PlayersInfo() (*dto.PlayersInfo, error)
 }

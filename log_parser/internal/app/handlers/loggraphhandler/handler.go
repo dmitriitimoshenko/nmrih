@@ -13,7 +13,11 @@ type Handler struct {
 	graphService  GraphService
 }
 
-func NewLogGraphHandler(csvRepository CSVRepository, csvParser CSVParser, graphService GraphService) *Handler {
+func NewLogGraphHandler(
+	csvRepository CSVRepository,
+	csvParser CSVParser,
+	graphService GraphService,
+) *Handler {
 	return &Handler{
 		csvRepository: csvRepository,
 		csvParser:     csvParser,
@@ -60,6 +64,17 @@ func (h *Handler) Graph(ctx *gin.Context) {
 	case "top-country":
 		{
 			result := h.graphService.TopCountries(logs)
+			ctx.JSON(http.StatusOK, gin.H{"data": result})
+			return
+		}
+	case "players-info":
+		{
+			result, err := h.graphService.PlayersInfo()
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				ctx.Abort()
+				return
+			}
 			ctx.JSON(http.StatusOK, gin.H{"data": result})
 			return
 		}

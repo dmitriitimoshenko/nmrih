@@ -7,6 +7,7 @@ import (
 
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/dto"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/enums"
+	"github.com/rumblefrog/go-a2s"
 )
 
 const (
@@ -14,7 +15,9 @@ const (
 	topCountries    = 9
 )
 
-type Service struct{}
+type Service struct {
+	a2sClient A2SClient
+}
 
 func NewService() *Service {
 	return &Service{}
@@ -208,4 +211,31 @@ func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageLi
 	})
 
 	return topCountriesPercentageList
+}
+
+func (s *Service) PlayersInfo() (*dto.PlayersInfo, error) {
+	playersInfo, err := s.a2sClient.QueryPlayer()
+	if err != nil {
+		return nil, err
+	}
+
+	playersInfoDto := s.mapPlayersInfo(playersInfo)
+
+	return playersInfoDto, nil
+}
+
+func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
+	playersInfoDto := &dto.PlayersInfo{}
+
+	playersInfoDto.Count = int(playersInfo.Count)
+
+	for _, playerInfo := range playersInfo.Players {
+		playersInfoDto.PlayerInfo = append(playersInfoDto.PlayerInfo, &dto.PlayerInfo{
+			Name:     playerInfo.Name,
+			Score:    playerInfo.Score,
+			Duration: playerInfo.Duration,
+		})
+	}
+
+	return playersInfoDto
 }
