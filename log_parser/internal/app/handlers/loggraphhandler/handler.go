@@ -27,7 +27,7 @@ func NewLogGraphHandler(
 
 func (h *Handler) Graph(ctx *gin.Context) {
 	graphType, ok := ctx.GetQuery("type")
-	if !ok || (graphType != "top-time-spent" && graphType != "top-country") {
+	if !ok || (graphType != "top-time-spent" && graphType != "top-country" && graphType != "players-info") {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid graph type"})
 		ctx.Abort()
 		return
