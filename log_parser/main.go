@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/a2sclient"
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/a2sclient/config"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/handlers/loggraphhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/handlers/logparserhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/ipapiclient"
@@ -46,12 +49,26 @@ func main() {
 
 	gin.SetMode(os.Getenv("GIN_MODE"))
 
+	serverPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	ipAPIClient := ipapiclient.NewIPAPIClient()
+	a2sClientConfig := config.NewA2SClientConfig(
+		os.Getenv("SERVER_ADDR"),
+		serverPort,
+	)
+	a2sClient, err := a2sclient.NewA2SClient(a2sClientConfig)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	logRepositoryService := logrepository.NewService()
 	csvGeneratorService := csvgenerator.NewCSVGenerator()
 	csvRepositoryService := csvrepository.NewService()
 	csvParserService := csvparser.NewService()
-	graphService := graph.NewService()
-	ipAPIClient := ipapiclient.NewIPAPIClient()
+	graphService := graph.NewService(a2sClient)
 
 	logParserService := logparser.NewService(
 		logRepositoryService,

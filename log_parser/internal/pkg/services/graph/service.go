@@ -19,8 +19,8 @@ type Service struct {
 	a2sClient A2SClient
 }
 
-func NewService() *Service {
-	return &Service{}
+func NewService(a2sClient A2SClient) *Service {
+	return &Service{a2sClient: a2sClient}
 }
 
 func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
