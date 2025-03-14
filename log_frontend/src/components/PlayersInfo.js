@@ -1,21 +1,19 @@
 import React from 'react';
 
-const PlayersInfo = ({data}) => {
-  const { playersInfo, loading } = data;
-
+const PlayersInfo = ({data, loading}) => {
   if (loading) {
     return <p style={{ color: '#fff' }}>Loading player info...</p>;
   }
 
-  if (!playersInfo || playersInfo.count === 0) {
+  if (!data || data.count === 0) {
     return <p style={{ color: '#fff' }}>No players connected.</p>;
   }
 
   return (
     <div className="players-info">
-      <h4>Players Connected ({playersInfo.count})</h4>
+      <h4>Players Connected ({data.count})</h4>
       <ul>
-        {playersInfo.player && playersInfo.player.map((p, index) => (
+        {data.player && data.player.map((p, index) => (
           <li key={index}>
             <span>{p.Name}</span>
             <span>Score: {p.Score}</span>
