@@ -18,13 +18,9 @@ function App() {
         <TopTimeChart data={chartData} />
       </div>
 
-      <h3>Top Countries</h3>
-      <div className="pie-chart-container">
+      <h3>Top Countries & Player Info</h3>
+      <div className="chart-and-info-container">
         <CountryPieChart />
-      </div>
-
-      <h3>Player Info</h3>
-      <div className="info-container">
         <PlayersInfo />
       </div>
     </div>
