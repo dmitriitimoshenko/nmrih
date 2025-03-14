@@ -13,20 +13,30 @@ function App() {
       <h1>Krich Casual NMRiH Server Dashboard</h1>
       <Controls onRefresh={refreshData} loading={loading} />
       
-      <h3>Top Time-spent Players</h3>
-      <div className="graph-container">
-        <TopTimeChart data={chartData} />
-      </div>
-
-      <h3>Top Countries & Player Info</h3>
-      <div className="chart-and-info-container">
-        <div className="pie-chart-container">
-          <CountryPieChart />
-        </div>
-        <div className="players-info">
-          <PlayersInfo />
-        </div>
-      </div>
+      <table>
+        <tr>
+          <td colspan="2">
+            <h3>Top Time-spent Players</h3>
+            <div className="graph-container">
+              <TopTimeChart data={chartData} />
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <h3>Top Countries</h3>
+            <div className="pie-chart-container">
+              <CountryPieChart />
+            </div>
+          </td>
+          <td>
+            <h3>Player Info</h3>
+            <div className="players-info">
+              <PlayersInfo />
+            </div>
+          </td>
+        </tr>
+      </table>
     </div>
   );
 }
