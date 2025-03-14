@@ -1,4 +1,3 @@
-/* Общие стили */
 body, .App {
   margin: 0;
   padding: 0;
@@ -12,7 +11,6 @@ body, .App {
   padding: 20px;
 }
 
-/* Кнопки и лоадер */
 .controls {
   margin: 20px 0;
 }
@@ -35,7 +33,6 @@ body, .App {
   margin-top: 10px;
 }
 
-/* График топ игроков (BarChart) */
 .graph-container {
   width: 100%;
   padding: 0 16px;
@@ -43,46 +40,42 @@ body, .App {
   margin: 0 auto 20px;
 }
 
-/* Контейнер для диаграммы и информации об игроках */
 .chart-and-info-container {
   display: flex;
-  flex-wrap: wrap;       /* Чтобы на маленьких экранах блоки могли переноситься */
-  gap: 20px;
-  justify-content: center;
   flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
-/* Обёртка для круговой диаграммы (PieChart) */
-.pie-chart-wrapper {
-  width: 100%;
-  max-width: 480px;      /* Ширина на больших экранах */
-  height: 400px;         /* Фиксированная высота для Recharts */
-  margin: 0 auto;
-  background-color: #111;
-  border-radius: 8px;
-  box-sizing: border-box;
-  overflow: hidden;      /* Можно убрать прокрутку, если не нужна */
-}
-
-/* Контейнер внутри обёртки, в котором находится ResponsiveContainer */
-.pie-chart-container {
-  width: 100%;
-  height: 100%;
-}
-
-/* Блок с информацией об игроках */
+.pie-chart-container,
 .players-info {
-  width: 100%;
-  max-width: 480px;
-  background-color: #111;
-  border-radius: 8px;
-  text-align: left;
-  margin: 0 auto;
-  padding: 20px;
+  flex: 1;
+  max-width: 480px; /* To keep the individual components within a desired width */
+  height: 480px; /* to match the max height constraint */
   box-sizing: border-box;
 }
 
-/* Стили для списка игроков */
+/* Медиа-запрос для мобильных устройств */
+@media screen and (max-width: 768px) {
+  .chart-and-info-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Переопределяем стили для контейнера круговой диаграммы */
+  .pie-chart-container {
+    max-width: 100% !important;
+    height: 400px !important; /* Указываем фиксированную высоту */
+  }
+
+  .players-info {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
 .players-info h4 {
   margin-top: 0;
 }
@@ -101,22 +94,4 @@ body, .App {
   display: flex;
   flex-direction: column;
   font-size: 14px;
-}
-
-/* Адаптив для мобильных устройств */
-@media screen and (max-width: 768px) {
-  .chart-and-info-container {
-    flex-direction: column;    /* Ставим столбиком на маленьких экранах */
-    align-items: center;
-  }
-
-  .pie-chart-wrapper {
-    max-width: 90%;           /* Уменьшаем ширину для мобильных */
-    height: 300px;            /* Меньше высота диаграммы, чтобы умещалась */
-  }
-
-  .players-info {
-    max-width: 90%;
-    margin-top: 20px;         /* Отступ между блоками */
-  }
 }
