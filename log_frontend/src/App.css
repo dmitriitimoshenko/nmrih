@@ -46,13 +46,14 @@ body, .App {
   justify-content: center;
   align-items: flex-start;
   gap: 20px;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* allows wrapping on small screens */
 }
 
-.pie-chart-container {
+.pie-chart-container,
+.players-info {
   flex: 1;
-  max-width: 400px;
-  height: 400px;
+  max-width: 400px; /* To keep the individual components within a desired width */
+  height: 400px; /* to match the max height constraint */
   box-sizing: border-box;
 }
 
@@ -61,10 +62,6 @@ body, .App {
 }
 
 .players-info {
-  flex: 1;
-  max-width: 400px;
-  height: 400px;
-  box-sizing: border-box;
   max-height: 400px; 
   overflow-y: auto;
   padding: 20px;
