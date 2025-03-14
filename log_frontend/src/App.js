@@ -8,8 +8,8 @@ import './App.css';
 
 function App() {
   const { topTimeChartData } = useTopTimeChartData();
-
   const { width } = useWindowDimensions();
+
   const dashBoardUpperPart = (
     <div className="App">
       <h1>Krich Casual NMRiH Server Dashboard</h1>
