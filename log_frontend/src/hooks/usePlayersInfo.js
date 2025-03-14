@@ -1,22 +1,22 @@
-// import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-// const usePlayersInfo = () => {
-//   const [playersInfo, setPlayersInfo] = useState(null);
-//   const [loading, setLoading] = useState(true);
+const usePlayersInfo = () => {
+  const [data, setData] = useState(null);
 
-//   useEffect(() => {
-//     fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=players-info")
-//       .then(response => response.json())
-//       .then(jsonData => {
-//         setPlayersInfo(jsonData.data);
-//       })
-//       .catch(err => {
-//         console.error("Error fetching player info:", err);
-//       })
-//       .finally(() => setLoading(false));
-//   }, []);
+  useEffect(() => {
+    fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=players-info")
+      .then(response => response.json())
+      .then(jsonData => {
+        if (jsonData && jsonData.data) {
+          setData(jsonData.data);
+        }
+      })
+      .catch(err => {
+        console.error("Error fetching player info:", err);
+      })
+  }, []);
 
-//   return { playersInfo, loading };
-// };
+  return { data };
+};
 
-// export default usePlayersInfo;
+export default usePlayersInfo;

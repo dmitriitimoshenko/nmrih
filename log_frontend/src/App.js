@@ -3,11 +3,15 @@ import TopTimeChart from './components/TopTimeChart';
 import CountryPieChart from './components/CountryPieChart';
 import PlayersInfo from './components/PlayersInfo';
 import useTopTimeChartData from './hooks/useTopTimeChartData';
+import useCountryPieChartData from './hooks/useCountryPieChartData';
+import usePlayersInfo from './hooks/usePlayersInfo';
 import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
 function App() {
   const { topTimeChartData } = useTopTimeChartData();
+  const { countryPieChartData } = useCountryPieChartData();
+  const { playersInfoData } = usePlayersInfo();
   const { width } = useWindowDimensions();
 
   const dashBoardUpperPart = (
@@ -30,7 +34,7 @@ function App() {
                   <td>
                     <h3>Top Countries</h3>
                     <div className="pie-chart-container">
-                      <CountryPieChart />
+                      <CountryPieChart data={ countryPieChartData }/>
                     </div>
                   </td>
                 </tr>
@@ -38,7 +42,7 @@ function App() {
                   <td>
                     <h3>Player Info</h3>
                     <div className="players-info">
-                      <PlayersInfo />
+                      <PlayersInfo data={ playersInfoData }/>
                     </div>
                   </td>
                 </tr>
@@ -48,13 +52,13 @@ function App() {
                 <td>
                   <h3>Top Countries</h3>
                   <div className="pie-chart-container">
-                    <CountryPieChart />
+                    <CountryPieChart data={ countryPieChartData }/>
                   </div>
                 </td>
                 <td>
                   <h3>Player Info</h3>
                   <div className="players-info">
-                    <PlayersInfo />
+                    <PlayersInfo data={ playersInfoData }/>
                   </div>
                 </td>
               </tr>
