@@ -10,8 +10,9 @@ import './App.css';
 function App() {
   const { chartData, loading, refreshData } = useGraphData();
 
-  const { windowDimensions } = useWindowDimensions();
-  console.log(windowDimensions)
+  const { height, width } = useWindowDimensions();
+  console.log(useWindowDimensions())
+  console.log(height, width)
 
   return (
     <div className="App">
