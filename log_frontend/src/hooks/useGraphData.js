@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 
 const useTopTimeChartData = () => {
-  const [topTimeChartData, setTopTimeChartData] = useState([]);
-  const [topTimeChartRefreshData, setTopTimeChartRefreshDataLoading] = useState(false);
+  const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const fetchGraphData = async () => {
     try {
@@ -13,14 +13,14 @@ const useTopTimeChartData = () => {
         // Convert nanoseconds to hours with one decimal place
         time_spent: Number(((item.time_spent / 1e9) / 3600).toFixed(1))
       }));
-      setTopTimeChartData(convertedData);
+      setChartData(convertedData);
     } catch (error) {
       console.error('Error fetching graph data:', error);
     }
   };
 
   const refreshData = async () => {
-    setTopTimeChartRefreshDataLoading(true);
+    setLoading(true);
     try {
       const graphTimestamp = Date.now();
       const response = await fetch(`https://log-parser.rulat-bot.duckdns.org/api/v1/parse?t=${graphTimestamp}`);
@@ -33,7 +33,7 @@ const useTopTimeChartData = () => {
     } catch (error) {
       console.error('Error refreshing data:', error);
     } finally {
-      setTopTimeChartRefreshDataLoading(false);
+      setLoading(false);
     }
   };
 
@@ -41,7 +41,7 @@ const useTopTimeChartData = () => {
     fetchGraphData();
   }, []);
 
-  return { topTimeChartData, topTimeChartLoading, topTimeChartRefreshData };
+  return { chartData, loading, refreshData };
 };
 
 export default useTopTimeChartData;
