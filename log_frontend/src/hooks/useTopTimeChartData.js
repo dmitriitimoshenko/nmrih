@@ -22,7 +22,7 @@ const useTopTimeChartData = () => {
     fetchGraphData();
   }, []);
 
-  return { topTimeChartData, topTimeChartLoading };
+  return { topTimeChartData };
 };
 
 export default useTopTimeChartData;

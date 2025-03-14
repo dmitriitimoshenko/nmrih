@@ -7,7 +7,6 @@ import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
 function App() {
-  const { topTimeChartData, topTimeChartLoading } = useTopTimeChartData();
   const { width } = useWindowDimensions();
   const dashBoardUpperPart = (
     <div className="App">
@@ -19,7 +18,7 @@ function App() {
             <td colSpan="2">
               <h3>Top Time-spent Players</h3>
               <div className="graph-container">
-                <TopTimeChart data={topTimeChartData} />
+                <TopTimeChart data={ useTopTimeChartData() } />
               </div>
             </td>
           </tr>
