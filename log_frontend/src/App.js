@@ -9,7 +9,7 @@ import './App.css';
 
 function App() {
   const { chartData, loading, refreshData } = useGraphData();
-  const { _, width } = useWindowDimensions();
+  const { width } = useWindowDimensions();
 
   const dashBoardUpperPart = (
     <div className="App">
