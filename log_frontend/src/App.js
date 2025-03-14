@@ -1,6 +1,7 @@
 import React from 'react';
 import TopTimeChart from './components/TopTimeChart';
 import CountryPieChart from './components/CountryPieChart';
+import PlayersInfo from './components/PlayersInfo';
 import Controls from './components/Controls';
 import useGraphData from './hooks/useGraphData';
 
@@ -17,9 +18,10 @@ function App() {
         <TopTimeChart data={chartData} />
       </div>
 
-      <h3>Top Countries</h3>
-      <div className="pie-chart-container">
+      <h3>Top Countries &amp; Player Info</h3>
+      <div className="chart-and-info-container">
         <CountryPieChart />
+        <PlayersInfo />
       </div>
     </div>
   );
