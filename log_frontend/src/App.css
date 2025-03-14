@@ -37,16 +37,24 @@ body, .App {
   width: 100%;
   padding: 0 16px;
   box-sizing: border-box;
-  margin: 0 auto;
+  margin: 0 auto 20px;
 }
 
-.info-container {
+.chart-and-info-container {
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: flex-start;
   gap: 20px;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* allows wrapping on small screens */
+}
+
+.pie-chart-container,
+.players-info {
+  flex: 1;
+  max-width: 400px; /* To keep the individual components within a desired width */
+  height: 400px; /* to match the max height constraint */
+  box-sizing: border-box;
 }
 
 .pie-chart-container {
@@ -55,13 +63,11 @@ body, .App {
 
 .players-info {
   max-height: 400px; 
-  max-width: 400px;
   overflow-y: auto;
   padding: 20px;
   background-color: #111;
   color: #fff;
   border-radius: 8px;
-  box-sizing: border-box;
   text-align: left;
 }
 
@@ -83,20 +89,4 @@ body, .App {
   display: flex;
   flex-direction: column;
   font-size: 14px;
-}
-
-.chart-and-info-container {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 20px;
-  flex-wrap: wrap; /* allows wrapping on small screens */
-}
-
-.pie-chart-container,
-.info-container {
-  flex: 1;
-  max-width: 400px; /* To keep the individual components within a desired width */
-  height: 400px; /* to match the max height constraint */
 }
