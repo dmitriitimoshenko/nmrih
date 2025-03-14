@@ -49,6 +49,7 @@ body, .App {
   flex-wrap: wrap;       /* Чтобы на маленьких экранах блоки могли переноситься */
   gap: 20px;
   justify-content: center;
+  flex-direction: row;
 }
 
 /* Обёртка для круговой диаграммы (PieChart) */
