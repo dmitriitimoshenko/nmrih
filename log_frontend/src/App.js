@@ -19,12 +19,12 @@ function App() {
       </div>
 
       <h3>Top Countries</h3>
-      <div className="chart-and-info-container">
+      <div className="pie-chart-container">
         <CountryPieChart />
       </div>
 
       <h3>Player Info</h3>
-      <div className="chart-and-info-container">
+      <div className="info-container">
         <PlayersInfo />
       </div>
     </div>

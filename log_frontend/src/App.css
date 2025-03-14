@@ -40,7 +40,7 @@ body, .App {
   margin: 0 auto;
 }
 
-.chart-and-info-container {
+.info-container {
   display: flex;
   flex-direction: row;
   justify-content: center;
