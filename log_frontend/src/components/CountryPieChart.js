@@ -30,7 +30,6 @@ const CountryPieChart = () => {
   return (
     <div className="pie-chart-wrapper">
       {/* В этом блоке задаются размеры для ResponsiveContainer */}
-      <div className="pie-chart-container">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -62,7 +61,6 @@ const CountryPieChart = () => {
             <Legend wrapperStyle={{ color: "#fff" }} />
           </PieChart>
         </ResponsiveContainer>
-      </div>
     </div>
   );
 };
