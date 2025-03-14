@@ -6,12 +6,16 @@ import Controls from './components/Controls';
 import useGraphData from './hooks/useGraphData';
 import usePlayersInfo from './hooks/usePlayersInfo';
 import useCountryPieChartData from './hooks/useCountryPieChartData';
+import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
 function App() {
   const { topTimeChartData, loadingTopTimeChartData, refreshTopTimeChartData } = useGraphData();
   const { playerInfoData, loadingPlayerInfoData, refreshPlayerInfoData } = usePlayersInfo();
   const { countryPieChartData, loadingCountryPieChartData, refreshCountryPieChartData} = useCountryPieChartData();
+  const { windowDimensions } = useWindowDimensions();
+
+  console.log(windowDimensions)
 
   return (
     <div className="App">
