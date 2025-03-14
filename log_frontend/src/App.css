@@ -5,6 +5,7 @@ table {
 }
 
 td {
+  align-items: center;
   width: 50%;
 }
 
@@ -62,8 +63,8 @@ body, .App {
 .pie-chart-container,
 .players-info {
   flex: 1;
-  max-width: 480px; /* To keep the individual components within a desired width */
-  height: 480px; /* to match the max height constraint */
+  max-width: 500px;
+  height: 500px;
   box-sizing: border-box;
 }
 
