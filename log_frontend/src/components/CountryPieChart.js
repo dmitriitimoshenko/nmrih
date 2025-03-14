@@ -24,7 +24,7 @@ const CountryPieChart = () => {
   }
 
   return (
-    <div className="pie-chart-container" style={{ margin: '0 auto', maxWidth: '400px', height: '400px' }}>
+    <div className="pie-chart-container">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie

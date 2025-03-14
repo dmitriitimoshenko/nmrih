@@ -63,9 +63,13 @@ body, .App {
     flex-direction: column;
     align-items: center;
   }
-  
-  /* Можно также изменить размеры, если требуется */
-  .pie-chart-container,
+
+  /* Переопределяем стили для контейнера круговой диаграммы */
+  .pie-chart-container {
+    max-width: 100% !important;
+    height: 400px !important; /* Указываем фиксированную высоту */
+  }
+
   .players-info {
     max-width: 100%;
     height: auto;
