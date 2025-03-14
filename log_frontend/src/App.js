@@ -20,10 +20,10 @@ function App() {
 
       <h3>Top Countries & Player Info</h3>
       <div className="chart-and-info-container">
-        <div className="pie-chart-container">
+        <div>
           <CountryPieChart />
         </div>
-        <div className="players-info">
+        <div>
           <PlayersInfo />
         </div>
       </div>
