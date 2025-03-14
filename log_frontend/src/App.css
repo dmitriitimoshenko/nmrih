@@ -5,7 +5,6 @@ table {
 }
 
 td {
-  align-items: center;
   width: 50%;
 }
 
@@ -66,6 +65,7 @@ body, .App {
   max-width: 500px;
   height: 500px;
   box-sizing: border-box;
+  text-align: center;
 }
 
 /* Медиа-запрос для мобильных устройств */
