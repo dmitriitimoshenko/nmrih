@@ -8,12 +8,12 @@ import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
 function App() {
-  const { topTimeChartData, topTimeChartLoading, topTimeChartRefreshData } = useTopTimeChartData();
+  const { topTimeChartData, topTimeChartLoading, topTimeChartRefresh } = useTopTimeChartData();
   const { width } = useWindowDimensions();
   const dashBoardUpperPart = (
     <div className="App">
       <h1>Krich Casual NMRiH Server Dashboard</h1>
-      <Controls onRefresh={topTimeChartRefreshData} loading={topTimeChartLoading} />
+      <Controls onRefresh={topTimeChartRefresh} loading={topTimeChartLoading} />
       
       <table>
         <tbody>
