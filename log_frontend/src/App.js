@@ -3,12 +3,12 @@ import TopTimeChart from './components/TopTimeChart';
 import CountryPieChart from './components/CountryPieChart';
 import PlayersInfo from './components/PlayersInfo';
 import Controls from './components/Controls';
-import useGraphData from './hooks/useGraphData';
+import useTopTimeChartData from './hooks/useTopTimeChartData';
 import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
 function App() {
-  const { chartData, loading, refreshData } = useGraphData();
+  const { topTimechartData, loading, refreshData } = useTopTimeChartData();
   const { width } = useWindowDimensions();
 
   const dashBoardUpperPart = (
@@ -22,7 +22,7 @@ function App() {
             <td colSpan="2">
               <h3>Top Time-spent Players</h3>
               <div className="graph-container">
-                <TopTimeChart data={chartData} />
+                <TopTimeChart data={topTimechartData} />
               </div>
             </td>
           </tr>
