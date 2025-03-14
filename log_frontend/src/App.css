@@ -65,7 +65,10 @@ body, .App {
 .pie-chart-container,
 .players-info {
   flex: 1;
-  max-width: 500px;
+  max-width: 100%;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
   height: 500px;
   box-sizing: border-box;
 }
