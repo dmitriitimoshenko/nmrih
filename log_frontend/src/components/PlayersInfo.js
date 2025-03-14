@@ -1,6 +1,6 @@
 import React from 'react';
 
-const PlayersInfo = ({data, loading}) => {
+const PlayersInfo = ({data}, {loading}) => {
   if (loading) {
     return <p style={{ color: '#fff' }}>Loading player info...</p>;
   }

@@ -42,13 +42,13 @@ function App() {
             <td>
               <h3>Top Countries</h3>
               <div className="pie-chart-container">
-                <CountryPieChart data={countryPieChartData} />
+                <CountryPieChart data={countryPieChartData} loading={loadingCountryPieChartData} />
               </div>
             </td>
             <td>
               <h3>Player Info</h3>
               <div className="players-info">
-                <PlayersInfo data={playerInfoData} />
+                <PlayersInfo data={playerInfoData} loading={loadingPlayerInfoData}/>
               </div>
             </td>
           </tr>

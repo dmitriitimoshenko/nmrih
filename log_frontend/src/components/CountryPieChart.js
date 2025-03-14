@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recha
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28FD0', '#FF6666', '#66B3FF', '#FFCC99', '#66FF66', '#D0D0D0'];
 
-const CountryPieChart = ({data, loading}) => {
+const CountryPieChart = ({data}, {loading}) => {
   if (loading) {
     return <p style={{ color: '#fff' }}>Loading diagram data...</p>;
   }
