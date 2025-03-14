@@ -1,21 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import usePlayersInfo from './hooks/usePlayersInfo';
 
 const PlayersInfo = () => {
-  const [playersInfo, setPlayersInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=players-info")
-      .then(response => response.json())
-      .then(jsonData => {
-        // Expect jsonData of the form: { data: { count: number, player: [ {...}, ... ] } }
-        setPlayersInfo(jsonData.data);
-      })
-      .catch(err => {
-        console.error("Error fetching player info:", err);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { playersInfo, loading } = usePlayersInfo();
 
   if (loading) {
     return <p style={{ color: '#fff' }}>Loading player info...</p>;

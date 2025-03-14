@@ -1,26 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import useCountryPieChartData from './hooks/useCountryPieChartData';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28FD0', '#FF6666', '#66B3FF', '#FFCC99', '#66FF66', '#D0D0D0'];
 
 const CountryPieChart = () => {
-  const [data, setData] = useState([]);
+  const { data, loading } = useCountryPieChartData();
 
-  useEffect(() => {
-    fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=top-country")
-      .then(response => response.json())
-      .then(jsonData => {
-        if (jsonData && jsonData.data) {
-          setData(jsonData.data);
-        }
-      })
-      .catch(err => {
-        console.error("Error fetching pie chart data:", err);
-      });
-  }, []);
+  if (loading) {
+    return <p style={{ color: '#fff' }}>Loading diagram data...</p>;
+  }
 
   if (!data || data.length === 0) {
-    return <p style={{ color: '#fff' }}>No data available for the pie chart.</p>;
+    return <p style={{ color: '#fff' }}>No data for the diagram.</p>;
   }
 
   return (
