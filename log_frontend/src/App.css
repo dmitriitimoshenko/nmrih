@@ -52,15 +52,28 @@ body, .App {
 .pie-chart-container,
 .players-info {
   flex: 1;
-  max-width: 480px;
-  height: 480px;
+  max-width: 480px; /* To keep the individual components within a desired width */
+  height: 480px; /* to match the max height constraint */
   box-sizing: border-box;
-  overflow-y: auto;
-  padding: 20px;
-  background-color: #111;
-  color: #fff;
-  border-radius: 8px;
-  text-align: left;
+}
+
+/* Медиа-запрос для мобильных устройств */
+@media screen and (max-width: 768px) {
+  .chart-and-info-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Переопределяем стили для контейнера круговой диаграммы */
+  .pie-chart-container {
+    max-width: 100% !important;
+    height: 400px !important; /* Указываем фиксированную высоту */
+  }
+
+  .players-info {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 .players-info h4 {
@@ -81,22 +94,4 @@ body, .App {
   display: flex;
   flex-direction: column;
   font-size: 14px;
-}
-
-/* Медиа-запрос для мобильных устройств */
-@media screen and (max-width: 768px) {
-  .chart-and-info-container {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .pie-chart-container {
-    max-width: 100%;
-    height: 400px;
-  }
-  
-  .players-info {
-    max-width: 100%;
-    height: auto;
-  }
 }
