@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 const useTopTimeChartData = () => {
   const [topTimeChartData, setTopTimeChartData] = useState([]);
-  const [topTimeChartRefreshData, setTopTimeChartRefreshDataLoading] = useState(false);
+  const [topTimeChartRefreshDataLoading, setTopTimeChartRefreshDataLoading] = useState(false);
 
   const fetchGraphData = async () => {
     try {
@@ -41,7 +41,7 @@ const useTopTimeChartData = () => {
     fetchGraphData();
   }, []);
 
-  return { topTimeChartData, topTimeChartLoading, topTimeChartRefreshData };
+  return { topTimeChartData, topTimeChartLoading, topTimeChartRefreshDataLoading };
 };
 
 export default useTopTimeChartData;
