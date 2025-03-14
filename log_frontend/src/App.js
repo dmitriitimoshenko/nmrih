@@ -11,14 +11,10 @@ function App() {
   const { chartData, loading, refreshData } = useGraphData();
 
   const { windowDimensions } = useWindowDimensions
-  console.log(windowDimensions.width)
-  console.log(windowDimensions.height)
+  console.log(windowDimensions)
 
   return (
     <div className="App">
-      <h1>
-        {windowDimensions.width} x {windowDimensions.height}
-      </h1>
 
       <h1>Krich Casual NMRiH Server Dashboard</h1>
       <Controls onRefresh={refreshData} loading={loading} />
