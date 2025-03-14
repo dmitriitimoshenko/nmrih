@@ -10,7 +10,7 @@ import './App.css';
 function App() {
   const { chartData, loading, refreshData } = useGraphData();
 
-  const { windowDimensions } = useWindowDimensions
+  const { windowDimensions } = useWindowDimensions();
   console.log(windowDimensions)
 
   return (
