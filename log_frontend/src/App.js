@@ -4,6 +4,7 @@ import CountryPieChart from './components/CountryPieChart';
 import PlayersInfo from './components/PlayersInfo';
 import Controls from './components/Controls';
 import useGraphData from './hooks/useGraphData';
+import './App.css'; 
 
 function App() {
   const { chartData, loading, refreshData } = useGraphData();
@@ -14,28 +15,30 @@ function App() {
       <Controls onRefresh={refreshData} loading={loading} />
       
       <table>
-        <tr>
-          <td colspan="2">
-            <h3>Top Time-spent Players</h3>
-            <div className="graph-container">
-              <TopTimeChart data={chartData} />
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <h3>Top Countries</h3>
-            <div className="pie-chart-container">
-              <CountryPieChart />
-            </div>
-          </td>
-          <td>
-            <h3>Player Info</h3>
-            <div className="players-info">
-              <PlayersInfo />
-            </div>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td colspan="2">
+              <h3>Top Time-spent Players</h3>
+              <div className="graph-container">
+                <TopTimeChart data={chartData} />
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <h3>Top Countries</h3>
+              <div className="pie-chart-container">
+                <CountryPieChart />
+              </div>
+            </td>
+            <td>
+              <h3>Player Info</h3>
+              <div className="players-info">
+                <PlayersInfo />
+              </div>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   );
