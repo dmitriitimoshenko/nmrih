@@ -4,6 +4,10 @@ table {
   border-collapse: collapse;
 }
 
+td {
+  width: 50%;
+}
+
 body, .App {
   margin: 0;
   padding: 0;
