@@ -1,8 +1,7 @@
 import React from 'react';
-import usePlayersInfo from './hooks/usePlayersInfo';
 
-const PlayersInfo = () => {
-  const { playersInfo, loading } = usePlayersInfo();
+const PlayersInfo = ({data}) => {
+  const { playersInfo, loading } = data;
 
   if (loading) {
     return <p style={{ color: '#fff' }}>Loading player info...</p>;
