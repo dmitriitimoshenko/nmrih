@@ -4,13 +4,22 @@ import CountryPieChart from './components/CountryPieChart';
 import PlayersInfo from './components/PlayersInfo';
 import Controls from './components/Controls';
 import useGraphData from './hooks/useGraphData';
+import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
 function App() {
   const { chartData, loading, refreshData } = useGraphData();
 
+  const { windowDimensions } = useWindowDimensions
+  console.log(windowDimensions.width)
+  console.log(windowDimensions.height)
+
   return (
     <div className="App">
+      <h1>
+        {windowDimensions.width} x {windowDimensions.height}
+      </h1>
+
       <h1>Krich Casual NMRiH Server Dashboard</h1>
       <Controls onRefresh={refreshData} loading={loading} />
       
