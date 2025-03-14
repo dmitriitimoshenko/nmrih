@@ -9,8 +9,6 @@ import './App.css';
 function App() {
   const { topTimeChartData } = useTopTimeChartData();
 
-  console.log(topTimeChartData);
-
   const { width } = useWindowDimensions();
   const dashBoardUpperPart = (
     <div className="App">
