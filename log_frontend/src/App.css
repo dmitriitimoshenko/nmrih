@@ -59,7 +59,7 @@ body, .App {
 
 .pie-chart-container,
 .players-info {
-  max-height: 400px; 
+  max-height: 480px; 
   overflow-y: auto;
   padding: 20px;
   background-color: #111;
