@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const useGraphData = () => {
+const useTopTimeChartData = () => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -44,4 +44,4 @@ const useGraphData = () => {
   return { chartData, loading, refreshData };
 };
 
-export default useGraphData;
+export default useTopTimeChartData;
