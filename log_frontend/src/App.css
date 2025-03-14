@@ -57,10 +57,7 @@ body, .App {
   box-sizing: border-box;
 }
 
-.pie-chart-container {
-  margin: 0 auto;
-}
-
+.pie-chart-container,
 .players-info {
   max-height: 400px; 
   overflow-y: auto;
