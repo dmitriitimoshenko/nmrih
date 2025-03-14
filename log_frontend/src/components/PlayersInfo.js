@@ -1,19 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-const PlayersInfo = ({data}, {loading}) => {
+const PlayersInfo = () => {
+  const [playersInfo, setPlayersInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=players-info")
+      .then(response => response.json())
+      .then(jsonData => {
+        // Expect jsonData of the form: { data: { count: number, player: [ {...}, ... ] } }
+        setPlayersInfo(jsonData.data);
+      })
+      .catch(err => {
+        console.error("Error fetching player info:", err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   if (loading) {
     return <p style={{ color: '#fff' }}>Loading player info...</p>;
   }
 
-  if (!data || data.count === 0) {
+  if (!playersInfo || playersInfo.count === 0) {
     return <p style={{ color: '#fff' }}>No players connected.</p>;
   }
 
   return (
     <div className="players-info">
-      <h4>Players Connected ({data.count})</h4>
+      <h4>Players Connected ({playersInfo.count})</h4>
       <ul>
-        {data.player && data.player.map((p, index) => (
+        {playersInfo.player && playersInfo.player.map((p, index) => (
           <li key={index}>
             <span>{p.Name}</span>
             <span>Score: {p.Score}</span>

@@ -4,37 +4,23 @@ import CountryPieChart from './components/CountryPieChart';
 import PlayersInfo from './components/PlayersInfo';
 import Controls from './components/Controls';
 import useGraphData from './hooks/useGraphData';
-import usePlayersInfo from './hooks/usePlayersInfo';
-import useCountryPieChartData from './hooks/useCountryPieChartData';
-import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
 function App() {
-  const { topTimeChartData, loadingTopTimeChartData, refreshTopTimeChartData } = useGraphData();
-  const { playerInfoData, loadingPlayerInfoData, refreshPlayerInfoData } = usePlayersInfo();
-  const { countryPieChartData, loadingCountryPieChartData, refreshCountryPieChartData} = useCountryPieChartData();
-  const { windowDimensions } = useWindowDimensions();
-
-  console.log(windowDimensions)
+  const { chartData, loading, refreshData } = useGraphData();
 
   return (
     <div className="App">
-      <h1>
-        {windowDimensions.width} x {windowDimensions.height}
-      </h1>
-
       <h1>Krich Casual NMRiH Server Dashboard</h1>
-      <Controls onRefresh={refreshTopTimeChartData} loading={loadingTopTimeChartData} />
-      <Controls onRefresh={refreshPlayerInfoData} loading={loadingPlayerInfoData} />
-      <Controls onRefresh={refreshCountryPieChartData} loading={loadingCountryPieChartData} />
-
+      <Controls onRefresh={refreshData} loading={loading} />
+      
       <table>
         <tbody>
           <tr>
             <td colspan="2">
               <h3>Top Time-spent Players</h3>
               <div className="graph-container">
-                <TopTimeChart data={topTimeChartData} />
+                <TopTimeChart data={chartData} />
               </div>
             </td>
           </tr>
@@ -42,13 +28,13 @@ function App() {
             <td>
               <h3>Top Countries</h3>
               <div className="pie-chart-container">
-                <CountryPieChart data={countryPieChartData} loading={loadingCountryPieChartData} />
+                <CountryPieChart />
               </div>
             </td>
             <td>
               <h3>Player Info</h3>
               <div className="players-info">
-                <PlayersInfo data={playerInfoData} loading={loadingPlayerInfoData}/>
+                <PlayersInfo />
               </div>
             </td>
           </tr>

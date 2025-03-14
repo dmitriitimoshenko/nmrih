@@ -10,6 +10,7 @@ const useGraphData = () => {
       const data = await response.json();
       const convertedData = data.data.map(item => ({
         ...item,
+        // Convert nanoseconds to hours with one decimal place
         time_spent: Number(((item.time_spent / 1e9) / 3600).toFixed(1))
       }));
       setChartData(convertedData);
@@ -26,6 +27,7 @@ const useGraphData = () => {
       if (!response.ok) {
         throw new Error('Error calling /parse endpoint');
       }
+      // Wait for parse endpoint to complete and then fetch updated graph data
       await response.json();
       await fetchGraphData();
     } catch (error) {
