@@ -2,18 +2,16 @@ import React from 'react';
 import TopTimeChart from './components/TopTimeChart';
 import CountryPieChart from './components/CountryPieChart';
 import PlayersInfo from './components/PlayersInfo';
-import Controls from './components/Controls';
 import useTopTimeChartData from './hooks/useTopTimeChartData';
 import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
 function App() {
-  const { topTimeChartData, topTimeChartLoading, topTimeChartRefresh } = useTopTimeChartData();
+  const { topTimeChartData, topTimeChartLoading } = useTopTimeChartData();
   const { width } = useWindowDimensions();
   const dashBoardUpperPart = (
     <div className="App">
       <h1>Krich Casual NMRiH Server Dashboard</h1>
-      <Controls onRefresh={topTimeChartRefresh} loading={topTimeChartLoading} />
       
       <table>
         <tbody>

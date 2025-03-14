@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 
 const useTopTimeChartData = () => {
   const [topTimeChartData, setTopTimeChartData] = useState([]);
-  const [topTimeChartLoading, setTopTimeChartLoading] = useState(false);
 
   const fetchGraphData = async () => {
     try {
@@ -19,29 +18,11 @@ const useTopTimeChartData = () => {
     }
   };
 
-  const topTimeChartRefresh = async () => {
-    setTopTimeChartLoading(true);
-    try {
-      const graphTimestamp = Date.now();
-      const response = await fetch(`https://log-parser.rulat-bot.duckdns.org/api/v1/parse?t=${graphTimestamp}`);
-      if (!response.ok) {
-        throw new Error('Error calling /parse endpoint');
-      }
-      // Wait for parse endpoint to complete and then fetch updated graph data
-      await response.json();
-      await fetchGraphData();
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-    } finally {
-      setTopTimeChartLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchGraphData();
   }, []);
 
-  return { topTimeChartData, topTimeChartLoading, topTimeChartRefresh };
+  return { topTimeChartData, topTimeChartLoading };
 };
 
 export default useTopTimeChartData;
