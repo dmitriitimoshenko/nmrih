@@ -11,6 +11,9 @@ function App() {
   const { topTimeChartData, topTimeChartLoading, refreshData } = useTopTimeChartData();
   const { width } = useWindowDimensions();
 
+  console.log(useTopTimeChartData());
+  console.log(topTimeChartData);
+
   const dashBoardUpperPart = (
     <div className="App">
       <h1>Krich Casual NMRiH Server Dashboard</h1>
