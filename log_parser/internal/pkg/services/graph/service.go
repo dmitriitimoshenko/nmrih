@@ -242,29 +242,11 @@ func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
 	return playersInfoDto
 }
 
-// Session represents a player's connection session.
-type Session struct {
-	NickName string
-	Start    time.Time
-	End      time.Time
-}
-
-// daysIn returns the number of days in the given month/year.
-func daysIn(month time.Month, year int) int {
-	// time.Date with day 0 gives the last day of the previous month.
-	return time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
-}
-
-// OnlineStatistics computes, for each complete day and hour, the average concurrent players online.
-// It uses the connection/disconnection logs to build sessions, then for each hour bucket it simulates
-// connection events to calculate the average count over the hour.
 func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList {
-	// Sort logs by timestamp.
 	sort.Slice(logs, func(i, j int) bool {
 		return logs[i].TimeStamp.Before(logs[j].TimeStamp)
 	})
 
-	// Determine the request time and the earliest log entry.
 	requestTimeStamp := time.Now()
 	earliestLogEntry := requestTimeStamp
 	for _, logEntry := range logs {
@@ -273,20 +255,32 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 		}
 	}
 
-	// Build sessions from logs.
-	var sessions []Session
+	var sessions []dto.Session
 	activeConnections := make(map[string]time.Time)
 	for _, logEntry := range logs {
 		switch logEntry.Action {
 		case enums.Actions.Connected():
-			// Start a session if not already connected.
 			if _, exists := activeConnections[logEntry.NickName]; !exists {
 				activeConnections[logEntry.NickName] = logEntry.TimeStamp
+				continue
 			}
+			lastActivityTimeStamp := s.findLastUserActivityTimeStampBefore(
+				logs,
+				logEntry.TimeStamp,
+				logEntry.NickName,
+			)
+			if lastActivityTimeStamp == nil {
+				continue
+			}
+			sessions = append(sessions, dto.Session{
+				NickName: logEntry.NickName,
+				Start:    activeConnections[logEntry.NickName],
+				End:      *lastActivityTimeStamp,
+			})
+			delete(activeConnections, logEntry.NickName)
 		case enums.Actions.Disconnected():
-			// End a session if there is an active connection.
 			if start, exists := activeConnections[logEntry.NickName]; exists {
-				sessions = append(sessions, Session{
+				sessions = append(sessions, dto.Session{
 					NickName: logEntry.NickName,
 					Start:    start,
 					End:      logEntry.TimeStamp,
@@ -295,13 +289,26 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 			}
 		}
 	}
-	// For any players still connected, assume they disconnected at requestTimeStamp.
-	for nick, start := range activeConnections {
-		sessions = append(sessions, Session{
-			NickName: nick,
-			Start:    start,
-			End:      requestTimeStamp,
-		})
+	if len(activeConnections) > 0 {
+		// If there are still connected users at the end of the logs
+		// Add their current session duration to the total
+		for nickName := range activeConnections {
+			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(
+				logs,
+				nickName,
+			)
+			if lastActivityTimeStamp == nil {
+				// Impossible sceanrio, but just in case
+				// If there is no activity at all before the current (second in line) connection, skip
+				continue
+			}
+			sessions = append(sessions, dto.Session{
+				NickName: nickName,
+				Start:    activeConnections[nickName],
+				End:      *lastActivityTimeStamp,
+			})
+			delete(activeConnections, nickName)
+		}
 	}
 
 	// Prepare the final result.
@@ -391,79 +398,3 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 
 	return stats
 }
-
-// func daysIn(month time.Month, year int) int {
-// 	// time.Date automatically adjusts when the day is 0,
-// 	// so this returns the last day of the given month.
-// 	return time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
-// }
-
-// func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList {
-// 	requestTimeStamp := time.Now()
-// 	earliestLogEntry := requestTimeStamp
-// 	for _, logEntry := range logs {
-// 		if logEntry.TimeStamp.Before(earliestLogEntry) {
-// 			earliestLogEntry = logEntry.TimeStamp
-// 		}
-// 	}
-
-// 	for year := earliestLogEntry.Year(); year <= requestTimeStamp.Year(); year++ {
-// 		monthUntil := time.December
-// 		if year == requestTimeStamp.Year() {
-// 			monthUntil = requestTimeStamp.Month()
-// 		}
-// 		for month := earliestLogEntry.Month(); month <= monthUntil; month++ {
-// 			dayUntil := daysIn(month, year)
-// 			if year == requestTimeStamp.Year() && month == requestTimeStamp.Month() {
-// 				dayUntil = requestTimeStamp.Day()
-// 			}
-// 			for day := earliestLogEntry.Day(); day <= dayUntil; day++ {
-// 				if requestTimeStamp.Year() == year && requestTimeStamp.Month() == month && requestTimeStamp.Day() == day {
-// 					continue
-// 				}
-
-// 				// implement day by day logic here
-
-// 				// day by day logic finished here
-// 			}
-// 		}
-// 	}
-// }
-
-// playersOnlineCountPerHour := make(map[int]int, 0)
-// uniqueNickNamesPerHour := make(map[int][]string, 0)
-// lastConnected := make(map[string]time.Time)
-
-// for _, logEntry := range logs {
-// 	switch logEntry.Action {
-// 	case enums.Actions.Connected():
-// 		{
-// 			lastConnected[logEntry.NickName] = logEntry.TimeStamp
-// 			break
-// 		}
-// 	case enums.Actions.Disconnected():
-// 		{
-// 			if _, ok := lastConnected[logEntry.NickName]; !ok {
-// 				continue
-// 			}
-// 			if logEntry.TimeStamp.Sub(lastConnected[logEntry.NickName]) > time.Minute*10 {
-// 				if lastConnected[logEntry.NickName].Hour() == logEntry.TimeStamp.Hour() {
-// 					uniqueNickNamesPerHour[logEntry.TimeStamp.Hour()] = append(
-// 						uniqueNickNamesPerHour[logEntry.TimeStamp.Hour()],
-// 						logEntry.NickName,
-// 					)
-// 					playersOnlineCountPerHour[logEntry.TimeStamp.Hour()]++
-// 					delete(lastConnected, logEntry.NickName)
-// 				} else if lastConnected[logEntry.NickName].Hour() < logEntry.TimeStamp.Hour() {
-// 					var hoursOfActivity []int
-// 					if lastConnected[logEntry.NickName].Minute() > 50 {
-// 						hoursOfActivity = append(hoursOfActivity, lastConnected[logEntry.NickName].Hour())
-// 					}
-
-// 					for h := lastConnected[logEntry.NickName].Hour(); h <=
-// 				}
-// 			}
-// 			continue
-// 		}
-// 	}
-// }
