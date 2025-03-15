@@ -313,6 +313,15 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
+	minSessionDuration := 10 * time.Minute
+	validSessions := make([]dto.Session, 0, len(sessions))
+	for _, sess := range sessions {
+		if sess.End.Sub(sess.Start) >= minSessionDuration {
+			validSessions = append(validSessions, sess)
+		}
+	}
+	sessions = validSessions
+
 	log.Printf("[GraphService][OnlineStatistics][2] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
 
 	timelineStart := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
@@ -375,5 +384,5 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 
 	log.Printf("[GraphService][OnlineStatistics][4] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
 
-	return append(avgHourlyStats[4:], avgHourlyStats[:4]...)
+	return append(avgHourlyStats[4:], avgHourlyStats[:5]...)
 }
