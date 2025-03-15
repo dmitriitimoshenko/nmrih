@@ -356,8 +356,8 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 			// If no sessions overlap this hour, concurrent count is zero.
 			if len(events) == 0 {
 				dailyStats = append(dailyStats, dto.OnlineStatisticsHourUnit{
-					Hour:               hour,
-					UniquePlayersCount: 0,
+					Hour:                  hour,
+					ConcurentPlayersCount: 0,
 				})
 				continue
 			}
@@ -389,8 +389,8 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 			concurrentPlayers := int(avgConcurrency + 0.5) // round to nearest int
 
 			dailyStats = append(dailyStats, dto.OnlineStatisticsHourUnit{
-				Hour:               hour,
-				UniquePlayersCount: concurrentPlayers, // now represents concurrent players
+				Hour:                  hour,
+				ConcurentPlayersCount: concurrentPlayers, // now represents concurrent players
 			})
 		}
 		stats = append(stats, dailyStats)
