@@ -378,5 +378,5 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		})
 	}
 
-	return append(avgHourlyStats[4:], avgHourlyStats[:20]...)
+	return append(avgHourlyStats[4:], avgHourlyStats[:4]...)
 }
