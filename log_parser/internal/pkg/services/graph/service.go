@@ -242,7 +242,7 @@ func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
 	return playersInfoDto
 }
 
-func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList {
+func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 	sort.Slice(logs, func(i, j int) bool {
 		return logs[i].TimeStamp.Before(logs[j].TimeStamp)
 	})
@@ -290,16 +290,12 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 		}
 	}
 	if len(activeConnections) > 0 {
-		// If there are still connected users at the end of the logs
-		// Add their current session duration to the total
 		for nickName := range activeConnections {
 			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(
 				logs,
 				nickName,
 			)
 			if lastActivityTimeStamp == nil {
-				// Impossible sceanrio, but just in case
-				// If there is no activity at all before the current (second in line) connection, skip
 				continue
 			}
 			sessions = append(sessions, dto.Session{
@@ -311,40 +307,32 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 		}
 	}
 
-	// Prepare the final result.
-	var stats dto.OnlineStatisticsList
+	hourlySums := make([]float64, 24)
+	dayCount := 0
 
-	// We’ll compute statistics for complete days only.
 	currentDay := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
 	endDay := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
 
-	// Iterate day by day.
 	for day := currentDay; day.Before(endDay); day = day.Add(24 * time.Hour) {
-		var dailyStats dto.OnlineStatistics
-		// For each hour of the day.
+		dayCount++
 		for hour := 0; hour < 24; hour++ {
 			hourStart := time.Date(day.Year(), day.Month(), day.Day(), hour, 0, 0, 0, time.UTC)
 			hourEnd := hourStart.Add(time.Hour)
 
-			// For simulation we use events: each event has a timestamp and a delta (+1 or -1).
 			type event struct {
 				time  time.Time
 				delta int
 			}
 			var events []event
 
-			// For each session that overlaps this hour, determine the effective entry and exit times.
 			for _, session := range sessions {
-				// Skip sessions that don't overlap this hour.
 				if session.End.Before(hourStart) || session.Start.After(hourEnd) {
 					continue
 				}
-				// The effective start is the later of session.Start and hourStart.
 				effectiveStart := session.Start
 				if effectiveStart.Before(hourStart) {
 					effectiveStart = hourStart
 				}
-				// The effective end is the earlier of session.End and hourEnd.
 				effectiveEnd := session.End
 				if effectiveEnd.After(hourEnd) {
 					effectiveEnd = hourEnd
@@ -353,48 +341,44 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 				events = append(events, event{time: effectiveEnd, delta: -1})
 			}
 
-			// If no sessions overlap this hour, concurrent count is zero.
+			var hourAvg float64
 			if len(events) == 0 {
-				dailyStats = append(dailyStats, dto.OnlineStatisticsHourUnit{
-					Hour:                  hour,
-					ConcurentPlayersCount: 0,
+				hourAvg = 0
+			} else {
+				sort.Slice(events, func(i, j int) bool {
+					if events[i].time.Equal(events[j].time) {
+						return events[i].delta > events[j].delta
+					}
+					return events[i].time.Before(events[j].time)
 				})
-				continue
-			}
 
-			// Sort events by time.
-			sort.Slice(events, func(i, j int) bool {
-				if events[i].time.Equal(events[j].time) {
-					// For events at the same time, process +1 before -1.
-					return events[i].delta > events[j].delta
+				currentCount := 0
+				lastTime := hourStart
+				var total float64
+				for _, ev := range events {
+					duration := ev.time.Sub(lastTime).Seconds()
+					total += float64(currentCount) * duration
+					currentCount += ev.delta
+					lastTime = ev.time
 				}
-				return events[i].time.Before(events[j].time)
-			})
-
-			// Simulate the hour to compute a time-weighted average of concurrent players.
-			currentCount := 0
-			lastTime := hourStart
-			var total float64
-			for _, ev := range events {
-				duration := ev.time.Sub(lastTime).Seconds()
-				total += float64(currentCount) * duration
-				currentCount += ev.delta
-				lastTime = ev.time
+				total += float64(currentCount) * hourEnd.Sub(lastTime).Seconds()
+				hourAvg = total / 3600.0
 			}
-			// Account for any remaining time in the hour.
-			total += float64(currentCount) * hourEnd.Sub(lastTime).Seconds()
-
-			// Average concurrent players over the hour (3600 seconds).
-			avgConcurrency := total / 3600.0
-			concurrentPlayers := int(avgConcurrency + 0.5) // round to nearest int
-
-			dailyStats = append(dailyStats, dto.OnlineStatisticsHourUnit{
-				Hour:                  hour,
-				ConcurentPlayersCount: concurrentPlayers, // now represents concurrent players
-			})
+			hourlySums[hour] += hourAvg
 		}
-		stats = append(stats, dailyStats)
 	}
 
-	return stats
+	avgHourlyStats := make(dto.OnlineStatistics, 0, 24)
+	for hour := 0; hour < 24; hour++ {
+		avg := 0
+		if dayCount > 0 {
+			avg = int((hourlySums[hour] / float64(dayCount)) + 0.5) // round to nearest int
+		}
+		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
+			Hour:                  hour,
+			ConcurentPlayersCount: avg,
+		})
+	}
+
+	return avgHourlyStats
 }

@@ -16,5 +16,5 @@ type GraphService interface {
 	TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList
 	TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageList
 	PlayersInfo() (*dto.PlayersInfo, error)
-	OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
+	OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics
 }

@@ -2,8 +2,6 @@ package dto
 
 import "time"
 
-type OnlineStatisticsList []OnlineStatistics
-
 type OnlineStatistics []OnlineStatisticsHourUnit
 
 type OnlineStatisticsHourUnit struct {
