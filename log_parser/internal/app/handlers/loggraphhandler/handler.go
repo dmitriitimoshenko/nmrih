@@ -1,9 +1,9 @@
 package loggraphhandler
 
 import (
-	"log"
 	"net/http"
 
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/enums"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,8 +26,14 @@ func NewLogGraphHandler(
 }
 
 func (h *Handler) Graph(ctx *gin.Context) {
-	graphType, ok := ctx.GetQuery("type")
-	if !ok || (graphType != "top-time-spent" && graphType != "top-country" && graphType != "players-info") {
+	graphTypeParam, ok := ctx.GetQuery("type")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid graph type"})
+		ctx.Abort()
+		return
+	}
+	graphType := enums.GraphType(graphTypeParam)
+	if !graphType.IsValid() {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid graph type"})
 		ctx.Abort()
 		return
@@ -45,29 +51,20 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	log.Println("[GraphHandler] Logs:")
-	for i, logE := range logs {
-		if logE != nil {
-			log.Printf("[Graph Handler] [%d]: %v", i+1, *logE)
-		} else {
-			log.Printf("[Graph Handler] [%d]: {{{ EMPTY }}}", i+1)
-		}
-	}
-
 	switch graphType {
-	case "top-time-spent":
+	case enums.GraphTypes.TopTimeSpentGraphType():
 		{
 			result := h.graphService.TopTimeSpent(logs)
 			ctx.JSON(http.StatusOK, gin.H{"data": result})
 			return
 		}
-	case "top-country":
+	case enums.GraphTypes.TopCountriesGraphType():
 		{
 			result := h.graphService.TopCountries(logs)
 			ctx.JSON(http.StatusOK, gin.H{"data": result})
 			return
 		}
-	case "players-info":
+	case enums.GraphTypes.PlayersInfoGraphType():
 		{
 			result, err := h.graphService.PlayersInfo()
 			if err != nil {
