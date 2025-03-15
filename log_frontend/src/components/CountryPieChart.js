@@ -1,14 +1,15 @@
+import React, { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28FD0', '#FF6666', '#66B3FF', '#FFCC99', '#66FF66', '#D0D0D0'];
 
-const CountryPieChart = ({ data }) => {
+const CountryPieChart = () => {
   return (
     <div className="pie-chart-container">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={data}
+            data={data.data}
             dataKey="percentage"
             nameKey="country"
             cx="50%"
@@ -18,7 +19,7 @@ const CountryPieChart = ({ data }) => {
             label={false}
             labelLine={false}
           >
-            {data.map((entry, index) => (
+            {data.data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
