@@ -260,9 +260,9 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		if logEntry.Action != enums.Actions.Connected() && logEntry.Action != enums.Actions.Disconnected() {
 			continue
 		}
+		logs = append(logs, logEntry)
 		if logEntry.TimeStamp.Before(earliestLogEntry) {
 			earliestLogEntry = logEntry.TimeStamp
-			logs = append(logs, logEntry)
 		}
 	}
 
