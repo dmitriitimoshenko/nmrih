@@ -1,5 +1,3 @@
-import React, { useEffect, useState } from 'react';
-
 const PlayersInfo = ({ data }) => {
   return (
     <div className="players-info">
