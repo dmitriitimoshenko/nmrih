@@ -17,7 +17,7 @@ function App() {
   const { onlineStatisticsChartData } = useOnlineStatisticsChartData();
   const { width } = useWindowDimensions();
 
-  // console.log(onlineStatisticsChartData);
+  console.log(countryPieChartData);
 
   const dashBoardUpperPart = (
     <div className="App">
