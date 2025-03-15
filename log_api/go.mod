@@ -1,4 +1,4 @@
-module github.com/dmitriitimoshenko/nmrih/log_api
+module github.com/dmitriitimoshenko/nmrih/api
 
 go 1.24.0
 

@@ -5,7 +5,7 @@ const useTopTimeChartData = () => {
 
   const fetchGraphData = async () => {
     try {
-      const response = await fetch('https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=top-time-spent');
+      const response = await fetch('https://api.rulat-bot.duckdns.org/api/v1/graph?type=top-time-spent');
       const data = await response.json();
       const convertedData = data.data.map(item => ({
         ...item,
