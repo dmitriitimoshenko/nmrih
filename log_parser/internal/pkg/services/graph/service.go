@@ -242,38 +242,29 @@ func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
 	return playersInfoDto
 }
 
+// Session represents a player's connection session.
 type Session struct {
 	NickName string
 	Start    time.Time
 	End      time.Time
 }
 
-
-// Helper functions to compute max and min of two times.
-func maxTime(a, b time.Time) time.Time {
-	if a.After(b) {
-		return a
-	}
-	return b
+// daysIn returns the number of days in the given month/year.
+func daysIn(month time.Month, year int) int {
+	// time.Date with day 0 gives the last day of the previous month.
+	return time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
 }
 
-func minTime(a, b time.Time) time.Time {
-	if a.Before(b) {
-		return a
-	}
-	return b
-}
-
-// OnlineStatistics computes average unique players online count per hour,
-// counting a player in a given hour only if his/her session overlaps that hour
-// by at least 10 minutes.
+// OnlineStatistics computes, for each complete day and hour, the average concurrent players online.
+// It uses the connection/disconnection logs to build sessions, then for each hour bucket it simulates
+// connection events to calculate the average count over the hour.
 func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList {
-	// 1. Sort logs by timestamp to process events in order.
+	// Sort logs by timestamp.
 	sort.Slice(logs, func(i, j int) bool {
 		return logs[i].TimeStamp.Before(logs[j].TimeStamp)
 	})
 
-	// 2. Determine the earliest log entry timestamp.
+	// Determine the request time and the earliest log entry.
 	requestTimeStamp := time.Now()
 	earliestLogEntry := requestTimeStamp
 	for _, logEntry := range logs {
@@ -282,9 +273,7 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 		}
 	}
 
-	// 3. Build sessions from logs.
-	// We'll assume that for each player, a "Connected" event is eventually paired
-	// with a "Disconnected" event. If a connection has no disconnection, we assume it ended at requestTimeStamp.
+	// Build sessions from logs.
 	var sessions []Session
 	activeConnections := make(map[string]time.Time)
 	for _, logEntry := range logs {
@@ -295,7 +284,7 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 				activeConnections[logEntry.NickName] = logEntry.TimeStamp
 			}
 		case enums.Actions.Disconnected():
-			// End a session if a connection exists.
+			// End a session if there is an active connection.
 			if start, exists := activeConnections[logEntry.NickName]; exists {
 				sessions = append(sessions, Session{
 					NickName: logEntry.NickName,
@@ -315,52 +304,87 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList
 		})
 	}
 
-	// 4. Filter out sessions that are too short (< 10 minutes).
-	minDuration := 10 * time.Minute
-	var validSessions []Session
-	for _, session := range sessions {
-		if session.End.Sub(session.Start) >= minDuration {
-			validSessions = append(validSessions, session)
-		}
-	}
-
-	// 5. Build the OnlineStatisticsList.
-	// Each element in the list represents one complete day.
-	// We skip the current (possibly incomplete) day.
+	// Prepare the final result.
 	var stats dto.OnlineStatisticsList
 
-	// Set up the iteration range.
-	// Start from midnight of the earliest day.
+	// We’ll compute statistics for complete days only.
 	currentDay := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
-	// End at midnight of the current day.
 	endDay := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
 
 	// Iterate day by day.
 	for day := currentDay; day.Before(endDay); day = day.Add(24 * time.Hour) {
-		// For each day, we want 24 hourly buckets.
 		var dailyStats dto.OnlineStatistics
+		// For each hour of the day.
 		for hour := 0; hour < 24; hour++ {
-			// Define the boundaries of the hour interval.
 			hourStart := time.Date(day.Year(), day.Month(), day.Day(), hour, 0, 0, 0, time.UTC)
 			hourEnd := hourStart.Add(time.Hour)
 
-			// Use a set (map) to track unique players.
-			uniquePlayers := make(map[string]struct{})
-			// Check each valid session for overlap with the current hour.
-			for _, session := range validSessions {
-				// Compute the overlapping time interval between the session and this hour.
-				overlapStart := maxTime(session.Start, hourStart)
-				overlapEnd := minTime(session.End, hourEnd)
-				if overlapEnd.After(overlapStart) && overlapEnd.Sub(overlapStart) >= minDuration {
-					uniquePlayers[session.NickName] = struct{}{}
+			// For simulation we use events: each event has a timestamp and a delta (+1 or -1).
+			type event struct {
+				time  time.Time
+				delta int
+			}
+			var events []event
+
+			// For each session that overlaps this hour, determine the effective entry and exit times.
+			for _, session := range sessions {
+				// Skip sessions that don't overlap this hour.
+				if session.End.Before(hourStart) || session.Start.After(hourEnd) {
+					continue
 				}
+				// The effective start is the later of session.Start and hourStart.
+				effectiveStart := session.Start
+				if effectiveStart.Before(hourStart) {
+					effectiveStart = hourStart
+				}
+				// The effective end is the earlier of session.End and hourEnd.
+				effectiveEnd := session.End
+				if effectiveEnd.After(hourEnd) {
+					effectiveEnd = hourEnd
+				}
+				events = append(events, event{time: effectiveStart, delta: 1})
+				events = append(events, event{time: effectiveEnd, delta: -1})
 			}
 
-			hourUnit := dto.OnlineStatisticsHourUnit{
-				Hour:               hour,
-				UniquePlayersCount: len(uniquePlayers),
+			// If no sessions overlap this hour, concurrent count is zero.
+			if len(events) == 0 {
+				dailyStats = append(dailyStats, dto.OnlineStatisticsHourUnit{
+					Hour:               hour,
+					UniquePlayersCount: 0,
+				})
+				continue
 			}
-			dailyStats = append(dailyStats, hourUnit)
+
+			// Sort events by time.
+			sort.Slice(events, func(i, j int) bool {
+				if events[i].time.Equal(events[j].time) {
+					// For events at the same time, process +1 before -1.
+					return events[i].delta > events[j].delta
+				}
+				return events[i].time.Before(events[j].time)
+			})
+
+			// Simulate the hour to compute a time-weighted average of concurrent players.
+			currentCount := 0
+			lastTime := hourStart
+			var total float64
+			for _, ev := range events {
+				duration := ev.time.Sub(lastTime).Seconds()
+				total += float64(currentCount) * duration
+				currentCount += ev.delta
+				lastTime = ev.time
+			}
+			// Account for any remaining time in the hour.
+			total += float64(currentCount) * hourEnd.Sub(lastTime).Seconds()
+
+			// Average concurrent players over the hour (3600 seconds).
+			avgConcurrency := total / 3600.0
+			concurrentPlayers := int(avgConcurrency + 0.5) // round to nearest int
+
+			dailyStats = append(dailyStats, dto.OnlineStatisticsHourUnit{
+				Hour:               hour,
+				UniquePlayersCount: concurrentPlayers, // now represents concurrent players
+			})
 		}
 		stats = append(stats, dailyStats)
 	}
