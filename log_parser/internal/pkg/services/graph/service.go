@@ -372,7 +372,7 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 	for hour := 0; hour < 24; hour++ {
 		avg := 0
 		if dayCount > 0 {
-			avg = int((hourlySums[hour] / float64(dayCount)) + 0.5) // round to nearest int
+			avg = int((hourlySums[hour] / float64(dayCount)) + 0.5)
 		}
 		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
 			Hour:                  hour,
