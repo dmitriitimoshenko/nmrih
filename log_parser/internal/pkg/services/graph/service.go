@@ -245,13 +245,9 @@ func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
 }
 
 func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistics {
-	log.Printf("[GraphService][OnlineStatistics] logs input: %+v\n", logsInput)
-
 	sort.Slice(logsInput, func(i, j int) bool {
 		return logsInput[i].TimeStamp.Before(logsInput[j].TimeStamp)
 	})
-
-	log.Printf("[GraphService][OnlineStatistics] logs sorted: %+v\n", logsInput)
 
 	requestTimeStamp := time.Now()
 	earliestLogEntry := requestTimeStamp
@@ -266,7 +262,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	log.Printf("[GraphService][OnlineStatistics] time gone: %.1fs; logs: %+v\n", time.Since(requestTimeStamp).Seconds(), logs)
+	log.Printf("[GraphService][OnlineStatistics][1] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
 
 	var sessions []dto.Session
 	activeConnections := make(map[string]time.Time)
@@ -317,7 +313,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	log.Printf("[GraphService][OnlineStatistics] time gone: %.1fs; sessions: %+v\n", time.Since(requestTimeStamp).Seconds(), sessions)
+	log.Printf("[GraphService][OnlineStatistics][2] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
 
 	timelineStart := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
 	timelineEnd := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
@@ -366,6 +362,8 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
+	log.Printf("[GraphService][OnlineStatistics][3] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
+
 	avgHourlyStats := make(dto.OnlineStatistics, 0, 24)
 	for hour, totalOverlap := range hourlyOverlap {
 		avg := 0
@@ -377,6 +375,8 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 			ConcurrentPlayersCount: avg,
 		})
 	}
+
+	log.Printf("[GraphService][OnlineStatistics][4] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
 
 	return append(avgHourlyStats[4:], avgHourlyStats[:4]...)
 }
