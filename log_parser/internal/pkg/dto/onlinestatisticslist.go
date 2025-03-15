@@ -5,8 +5,8 @@ import "time"
 type OnlineStatistics []OnlineStatisticsHourUnit
 
 type OnlineStatisticsHourUnit struct {
-	Hour                  int `json:"hour"`
-	ConcurrentPlayersCount int `json:"concurrent_players_count"`
+	Hour                   int     `json:"hour"`
+	ConcurrentPlayersCount float64 `json:"concurrent_players_count"`
 }
 
 type Session struct {

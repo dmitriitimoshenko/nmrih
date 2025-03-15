@@ -366,10 +366,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 
 	avgHourlyStats := make(dto.OnlineStatistics, 0, 24)
 	for hour, totalOverlap := range hourlyOverlap {
-		avg := 0
-		if dayCount > 0 {
-			avg = int((totalOverlap / (float64(dayCount) * 3600.0)) + 0.5)
-		}
+		avg := totalOverlap / (float64(dayCount) * 3600.0)
 		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
 			Hour:                   hour,
 			ConcurrentPlayersCount: avg,
