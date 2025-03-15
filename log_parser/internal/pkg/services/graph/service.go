@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"log"
+	"math"
 	"sort"
 	"time"
 
@@ -248,8 +248,6 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 		return logs[i].TimeStamp.Before(logs[j].TimeStamp)
 	})
 
-	log.Println("[GraphService][OnlineStatistics] break point 1: ", time.Now())
-
 	requestTimeStamp := time.Now()
 	earliestLogEntry := requestTimeStamp
 	for _, logEntry := range logs {
@@ -257,8 +255,6 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 			earliestLogEntry = logEntry.TimeStamp
 		}
 	}
-
-	log.Println("[GraphService][OnlineStatistics] break point 2: ", time.Now())
 
 	var sessions []dto.Session
 	activeConnections := make(map[string]time.Time)
@@ -295,14 +291,9 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 		}
 	}
 
-	log.Println("[GraphService][OnlineStatistics] break point 3: ", time.Now())
-
 	if len(activeConnections) > 0 {
 		for nickName := range activeConnections {
-			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(
-				logs,
-				nickName,
-			)
+			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(logs, nickName)
 			if lastActivityTimeStamp == nil {
 				continue
 			}
@@ -315,86 +306,64 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 		}
 	}
 
-	log.Println("[GraphService][OnlineStatistics] break point 4: ", time.Now())
+	timelineStart := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
+	timelineEnd := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
 
-	hourlySums := make([]float64, 24)
 	dayCount := 0
-
-	currentDay := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
-	endDay := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
-
-	log.Println("[GraphService][OnlineStatistics] break point 5: ", time.Now())
-
-	for day := currentDay; day.Before(endDay); day = day.Add(24 * time.Hour) {
+	for d := timelineStart; d.Before(timelineEnd); d = d.Add(24 * time.Hour) {
 		dayCount++
-		for hour := 0; hour < 24; hour++ {
-			hourStart := time.Date(day.Year(), day.Month(), day.Day(), hour, 0, 0, 0, time.UTC)
-			hourEnd := hourStart.Add(time.Hour)
+	}
+	if dayCount == 0 {
+		dayCount = 1
+	}
 
-			type event struct {
-				time  time.Time
-				delta int
+	hourlyOverlap := make([]float64, 24)
+
+	for _, session := range sessions {
+		effectiveStart := session.Start
+		if effectiveStart.Before(timelineStart) {
+			effectiveStart = timelineStart
+		}
+		effectiveEnd := session.End
+		if effectiveEnd.After(timelineEnd.Add(24 * time.Hour)) {
+			effectiveEnd = timelineEnd.Add(24 * time.Hour)
+		}
+		if !effectiveEnd.After(effectiveStart) {
+			continue
+		}
+
+		startIndex := int(effectiveStart.Sub(timelineStart).Hours())
+		endIndex := int(math.Ceil(effectiveEnd.Sub(timelineStart).Hours()))
+		for i := startIndex; i < endIndex; i++ {
+			blockStart := timelineStart.Add(time.Duration(i) * time.Hour)
+			blockEnd := blockStart.Add(time.Hour)
+			overlapStart := effectiveStart
+			if blockStart.After(overlapStart) {
+				overlapStart = blockStart
 			}
-			var events []event
-
-			for _, session := range sessions {
-				if session.End.Before(hourStart) || session.Start.After(hourEnd) {
-					continue
-				}
-				effectiveStart := session.Start
-				if effectiveStart.Before(hourStart) {
-					effectiveStart = hourStart
-				}
-				effectiveEnd := session.End
-				if effectiveEnd.After(hourEnd) {
-					effectiveEnd = hourEnd
-				}
-				events = append(events, event{time: effectiveStart, delta: 1})
-				events = append(events, event{time: effectiveEnd, delta: -1})
+			overlapEnd := effectiveEnd
+			if blockEnd.Before(overlapEnd) {
+				overlapEnd = blockEnd
 			}
-
-			var hourAvg float64
-			if len(events) == 0 {
-				hourAvg = 0
-			} else {
-				sort.Slice(events, func(i, j int) bool {
-					if events[i].time.Equal(events[j].time) {
-						return events[i].delta > events[j].delta
-					}
-					return events[i].time.Before(events[j].time)
-				})
-
-				currentCount := 0
-				lastTime := hourStart
-				var total float64
-				for _, ev := range events {
-					duration := ev.time.Sub(lastTime).Seconds()
-					total += float64(currentCount) * duration
-					currentCount += ev.delta
-					lastTime = ev.time
-				}
-				total += float64(currentCount) * hourEnd.Sub(lastTime).Seconds()
-				hourAvg = total / 3600.0
+			overlap := overlapEnd.Sub(overlapStart).Seconds()
+			if overlap > 0 {
+				bucket := blockStart.Hour()
+				hourlyOverlap[bucket] += overlap
 			}
-			hourlySums[hour] += hourAvg
 		}
 	}
 
-	log.Println("[GraphService][OnlineStatistics] break point 6: ", time.Now())
-
 	avgHourlyStats := make(dto.OnlineStatistics, 0, 24)
-	for hour := 0; hour < 24; hour++ {
+	for hour, totalOverlap := range hourlyOverlap {
 		avg := 0
 		if dayCount > 0 {
-			avg = int((hourlySums[hour] / float64(dayCount)) + 0.5)
+			avg = int((totalOverlap / (float64(dayCount) * 3600.0)) + 0.5)
 		}
 		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
 			Hour:                   hour,
 			ConcurrentPlayersCount: avg,
 		})
 	}
-
-	log.Println("[GraphService][OnlineStatistics] break point 7: ", time.Now())
 
 	return avgHourlyStats
 }
