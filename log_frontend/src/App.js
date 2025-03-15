@@ -2,9 +2,8 @@ import React from 'react';
 import TopTimeChart from './components/TopTimeChart';
 import CountryPieChart from './components/CountryPieChart';
 import PlayersInfo from './components/PlayersInfo';
+import OnlineStatisticsChart from './components/OnlineStatisticsChart'
 import useTopTimeChartData from './hooks/useTopTimeChartData';
-import useCountryPieChartData from './hooks/useCountryPieChartData';
-import usePlayersInfo from './hooks/usePlayersInfo';
 import useWindowDimensions from './hooks/useWindowDimensions';
 import './App.css'; 
 
@@ -65,7 +64,7 @@ function App() {
             <td colSpan="2">
               <h3>Online Statistics</h3>
               <div className="graph-container">
-                <TopTimeChart/>
+                <OnlineStatisticsChart/>
               </div>
             </td>
           </tr>
