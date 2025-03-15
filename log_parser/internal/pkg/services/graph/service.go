@@ -375,8 +375,8 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 			avg = int((hourlySums[hour] / float64(dayCount)) + 0.5)
 		}
 		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
-			Hour:                  hour,
-			ConcurentPlayersCount: avg,
+			Hour:                   hour,
+			ConcurrentPlayersCount: avg,
 		})
 	}
 
