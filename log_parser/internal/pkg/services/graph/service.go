@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"log"
 	"sort"
 	"time"
 
@@ -247,6 +248,8 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 		return logs[i].TimeStamp.Before(logs[j].TimeStamp)
 	})
 
+	log.Println("[GraphService][OnlineStatistics] break point 1: ", time.Now())
+
 	requestTimeStamp := time.Now()
 	earliestLogEntry := requestTimeStamp
 	for _, logEntry := range logs {
@@ -254,6 +257,8 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 			earliestLogEntry = logEntry.TimeStamp
 		}
 	}
+
+	log.Println("[GraphService][OnlineStatistics] break point 2: ", time.Now())
 
 	var sessions []dto.Session
 	activeConnections := make(map[string]time.Time)
@@ -289,6 +294,9 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 			}
 		}
 	}
+
+	log.Println("[GraphService][OnlineStatistics] break point 3: ", time.Now())
+
 	if len(activeConnections) > 0 {
 		for nickName := range activeConnections {
 			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(
@@ -307,11 +315,15 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 		}
 	}
 
+	log.Println("[GraphService][OnlineStatistics] break point 4: ", time.Now())
+
 	hourlySums := make([]float64, 24)
 	dayCount := 0
 
 	currentDay := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
 	endDay := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
+
+	log.Println("[GraphService][OnlineStatistics] break point 5: ", time.Now())
 
 	for day := currentDay; day.Before(endDay); day = day.Add(24 * time.Hour) {
 		dayCount++
@@ -368,6 +380,8 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 		}
 	}
 
+	log.Println("[GraphService][OnlineStatistics] break point 6: ", time.Now())
+
 	avgHourlyStats := make(dto.OnlineStatistics, 0, 24)
 	for hour := 0; hour < 24; hour++ {
 		avg := 0
@@ -375,10 +389,12 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 			avg = int((hourlySums[hour] / float64(dayCount)) + 0.5)
 		}
 		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
-			Hour:                  hour,
-			ConcurentPlayersCount: avg,
+			Hour:                   hour,
+			ConcurrentPlayersCount: avg,
 		})
 	}
+
+	log.Println("[GraphService][OnlineStatistics] break point 7: ", time.Now())
 
 	return avgHourlyStats
 }

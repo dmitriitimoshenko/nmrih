@@ -6,7 +6,7 @@ type OnlineStatistics []OnlineStatisticsHourUnit
 
 type OnlineStatisticsHourUnit struct {
 	Hour                  int `json:"hour"`
-	ConcurentPlayersCount int `json:"concurent_players_count"`
+	ConcurrentPlayersCount int `json:"concurrent_players_count"`
 }
 
 type Session struct {

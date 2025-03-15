@@ -48,7 +48,7 @@ const OnlineStatisticsChart = () => {
         />
         <Tooltip contentStyle={{ backgroundColor: "#333", border: "none", color: "#fff" }} />
         <Legend wrapperStyle={{ color: "#fff" }} />
-        <Line type="monotone" dataKey="concurent_players_count" stroke="#8884d8" activeDot={{ r: 8 }} />
+        <Line type="monotone" dataKey="concurrent_players_count" stroke="#8884d8" activeDot={{ r: 8 }} />
       </LineChart>
     </ResponsiveContainer>
   );
