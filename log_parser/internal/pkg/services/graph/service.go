@@ -245,9 +245,13 @@ func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
 }
 
 func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistics {
+	log.Printf("[GraphService][OnlineStatistics] logs input: %+v\n", logsInput)
+
 	sort.Slice(logsInput, func(i, j int) bool {
 		return logsInput[i].TimeStamp.Before(logsInput[j].TimeStamp)
 	})
+
+	log.Printf("[GraphService][OnlineStatistics] logs sorted: %+v\n", logsInput)
 
 	requestTimeStamp := time.Now()
 	earliestLogEntry := requestTimeStamp
@@ -261,6 +265,8 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 			logs = append(logs, logEntry)
 		}
 	}
+
+	log.Printf("[GraphService][OnlineStatistics] time gone: %.1fs; logs: %+v\n", time.Since(requestTimeStamp).Seconds(), logs)
 
 	var sessions []dto.Session
 	activeConnections := make(map[string]time.Time)
