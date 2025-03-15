@@ -21,6 +21,7 @@ function App() {
       .then(response => response.json())
       .then(data => {
         setLoading(false);
+        reload();
       })
       .catch(err => {
         console.error("Error refreshing parse endpoint:", err);
