@@ -1,5 +1,0 @@
-Flask
-Flask-Cors==3.0.10
-pandas
-matplotlib
-waitress
