@@ -75,6 +75,12 @@ func (h *Handler) Graph(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, gin.H{"data": result})
 			return
 		}
+	case enums.GraphTypes.OnlineStatisticsGraphType():
+		{
+			result := h.graphService.OnlineStatistics(logs)
+			ctx.JSON(http.StatusOK, gin.H{"data": result})
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"data": "none"})

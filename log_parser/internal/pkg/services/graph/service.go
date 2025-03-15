@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"log"
 	"sort"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 const (
 	topPlayersCount = 32
 	topCountries    = 9
+	breakHourNumber = 4
 )
 
 type Service struct {
@@ -24,6 +24,28 @@ func NewService(a2sClient A2SClient) *Service {
 }
 
 func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
+	totalSessionsDurations := s.getTotalSessionsDuration(logs)
+
+	topTimeSpentList := make(dto.TopTimeSpentList, 0, len(totalSessionsDurations))
+	for nickName, totalSessionsDuration := range totalSessionsDurations {
+		topTimeSpentList = append(topTimeSpentList, &dto.TopTimeSpent{
+			NickName:  nickName,
+			TimeSpent: totalSessionsDuration,
+		})
+	}
+
+	sort.Slice(topTimeSpentList, func(i, j int) bool {
+		return topTimeSpentList[i].TimeSpent > topTimeSpentList[j].TimeSpent
+	})
+
+	if len(topTimeSpentList) > topPlayersCount {
+		topTimeSpentList = topTimeSpentList[:topPlayersCount]
+	}
+
+	return topTimeSpentList
+}
+
+func (s *Service) getTotalSessionsDuration(logs []*dto.LogData) map[string]time.Duration {
 	totalSessionsDurations := make(map[string]time.Duration)
 	lastConnected := make(map[string]time.Time)
 
@@ -90,27 +112,7 @@ func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
 		}
 	}
 
-	log.Printf("[TopTimeSpent] TotalSessionsDurations: %+v\n", totalSessionsDurations)
-
-	topTimeSpentList := make(dto.TopTimeSpentList, 0, len(totalSessionsDurations))
-	for nickName, totalSessionsDuration := range totalSessionsDurations {
-		topTimeSpentList = append(topTimeSpentList, &dto.TopTimeSpent{
-			NickName:  nickName,
-			TimeSpent: totalSessionsDuration,
-		})
-	}
-
-	sort.Slice(topTimeSpentList, func(i, j int) bool {
-		return topTimeSpentList[i].TimeSpent > topTimeSpentList[j].TimeSpent
-	})
-
-	if len(topTimeSpentList) > topPlayersCount {
-		topTimeSpentList = topTimeSpentList[:topPlayersCount]
-	}
-
-	log.Printf("[TopTimeSpent] TopTimeSpent: %+v\n", topTimeSpentList)
-
-	return topTimeSpentList
+	return totalSessionsDurations
 }
 
 func (s *Service) addDurationToTotal(
@@ -239,3 +241,205 @@ func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
 
 	return playersInfoDto
 }
+
+type Session struct {
+	NickName string
+	Start    time.Time
+	End      time.Time
+}
+
+
+// Helper functions to compute max and min of two times.
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
+func minTime(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
+	}
+	return b
+}
+
+// OnlineStatistics computes average unique players online count per hour,
+// counting a player in a given hour only if his/her session overlaps that hour
+// by at least 10 minutes.
+func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList {
+	// 1. Sort logs by timestamp to process events in order.
+	sort.Slice(logs, func(i, j int) bool {
+		return logs[i].TimeStamp.Before(logs[j].TimeStamp)
+	})
+
+	// 2. Determine the earliest log entry timestamp.
+	requestTimeStamp := time.Now()
+	earliestLogEntry := requestTimeStamp
+	for _, logEntry := range logs {
+		if logEntry.TimeStamp.Before(earliestLogEntry) {
+			earliestLogEntry = logEntry.TimeStamp
+		}
+	}
+
+	// 3. Build sessions from logs.
+	// We'll assume that for each player, a "Connected" event is eventually paired
+	// with a "Disconnected" event. If a connection has no disconnection, we assume it ended at requestTimeStamp.
+	var sessions []Session
+	activeConnections := make(map[string]time.Time)
+	for _, logEntry := range logs {
+		switch logEntry.Action {
+		case enums.Actions.Connected():
+			// Start a session if not already connected.
+			if _, exists := activeConnections[logEntry.NickName]; !exists {
+				activeConnections[logEntry.NickName] = logEntry.TimeStamp
+			}
+		case enums.Actions.Disconnected():
+			// End a session if a connection exists.
+			if start, exists := activeConnections[logEntry.NickName]; exists {
+				sessions = append(sessions, Session{
+					NickName: logEntry.NickName,
+					Start:    start,
+					End:      logEntry.TimeStamp,
+				})
+				delete(activeConnections, logEntry.NickName)
+			}
+		}
+	}
+	// For any players still connected, assume they disconnected at requestTimeStamp.
+	for nick, start := range activeConnections {
+		sessions = append(sessions, Session{
+			NickName: nick,
+			Start:    start,
+			End:      requestTimeStamp,
+		})
+	}
+
+	// 4. Filter out sessions that are too short (< 10 minutes).
+	minDuration := 10 * time.Minute
+	var validSessions []Session
+	for _, session := range sessions {
+		if session.End.Sub(session.Start) >= minDuration {
+			validSessions = append(validSessions, session)
+		}
+	}
+
+	// 5. Build the OnlineStatisticsList.
+	// Each element in the list represents one complete day.
+	// We skip the current (possibly incomplete) day.
+	var stats dto.OnlineStatisticsList
+
+	// Set up the iteration range.
+	// Start from midnight of the earliest day.
+	currentDay := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
+	// End at midnight of the current day.
+	endDay := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
+
+	// Iterate day by day.
+	for day := currentDay; day.Before(endDay); day = day.Add(24 * time.Hour) {
+		// For each day, we want 24 hourly buckets.
+		var dailyStats dto.OnlineStatistics
+		for hour := 0; hour < 24; hour++ {
+			// Define the boundaries of the hour interval.
+			hourStart := time.Date(day.Year(), day.Month(), day.Day(), hour, 0, 0, 0, time.UTC)
+			hourEnd := hourStart.Add(time.Hour)
+
+			// Use a set (map) to track unique players.
+			uniquePlayers := make(map[string]struct{})
+			// Check each valid session for overlap with the current hour.
+			for _, session := range validSessions {
+				// Compute the overlapping time interval between the session and this hour.
+				overlapStart := maxTime(session.Start, hourStart)
+				overlapEnd := minTime(session.End, hourEnd)
+				if overlapEnd.After(overlapStart) && overlapEnd.Sub(overlapStart) >= minDuration {
+					uniquePlayers[session.NickName] = struct{}{}
+				}
+			}
+
+			hourUnit := dto.OnlineStatisticsHourUnit{
+				Hour:               hour,
+				UniquePlayersCount: len(uniquePlayers),
+			}
+			dailyStats = append(dailyStats, hourUnit)
+		}
+		stats = append(stats, dailyStats)
+	}
+
+	return stats
+}
+
+// func daysIn(month time.Month, year int) int {
+// 	// time.Date automatically adjusts when the day is 0,
+// 	// so this returns the last day of the given month.
+// 	return time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
+// }
+
+// func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatisticsList {
+// 	requestTimeStamp := time.Now()
+// 	earliestLogEntry := requestTimeStamp
+// 	for _, logEntry := range logs {
+// 		if logEntry.TimeStamp.Before(earliestLogEntry) {
+// 			earliestLogEntry = logEntry.TimeStamp
+// 		}
+// 	}
+
+// 	for year := earliestLogEntry.Year(); year <= requestTimeStamp.Year(); year++ {
+// 		monthUntil := time.December
+// 		if year == requestTimeStamp.Year() {
+// 			monthUntil = requestTimeStamp.Month()
+// 		}
+// 		for month := earliestLogEntry.Month(); month <= monthUntil; month++ {
+// 			dayUntil := daysIn(month, year)
+// 			if year == requestTimeStamp.Year() && month == requestTimeStamp.Month() {
+// 				dayUntil = requestTimeStamp.Day()
+// 			}
+// 			for day := earliestLogEntry.Day(); day <= dayUntil; day++ {
+// 				if requestTimeStamp.Year() == year && requestTimeStamp.Month() == month && requestTimeStamp.Day() == day {
+// 					continue
+// 				}
+
+// 				// implement day by day logic here
+
+// 				// day by day logic finished here
+// 			}
+// 		}
+// 	}
+// }
+
+// playersOnlineCountPerHour := make(map[int]int, 0)
+// uniqueNickNamesPerHour := make(map[int][]string, 0)
+// lastConnected := make(map[string]time.Time)
+
+// for _, logEntry := range logs {
+// 	switch logEntry.Action {
+// 	case enums.Actions.Connected():
+// 		{
+// 			lastConnected[logEntry.NickName] = logEntry.TimeStamp
+// 			break
+// 		}
+// 	case enums.Actions.Disconnected():
+// 		{
+// 			if _, ok := lastConnected[logEntry.NickName]; !ok {
+// 				continue
+// 			}
+// 			if logEntry.TimeStamp.Sub(lastConnected[logEntry.NickName]) > time.Minute*10 {
+// 				if lastConnected[logEntry.NickName].Hour() == logEntry.TimeStamp.Hour() {
+// 					uniqueNickNamesPerHour[logEntry.TimeStamp.Hour()] = append(
+// 						uniqueNickNamesPerHour[logEntry.TimeStamp.Hour()],
+// 						logEntry.NickName,
+// 					)
+// 					playersOnlineCountPerHour[logEntry.TimeStamp.Hour()]++
+// 					delete(lastConnected, logEntry.NickName)
+// 				} else if lastConnected[logEntry.NickName].Hour() < logEntry.TimeStamp.Hour() {
+// 					var hoursOfActivity []int
+// 					if lastConnected[logEntry.NickName].Minute() > 50 {
+// 						hoursOfActivity = append(hoursOfActivity, lastConnected[logEntry.NickName].Hour())
+// 					}
+
+// 					for h := lastConnected[logEntry.NickName].Hour(); h <=
+// 				}
+// 			}
+// 			continue
+// 		}
+// 	}
+// }
