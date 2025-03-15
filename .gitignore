@@ -22,8 +22,8 @@ addons/sourcemod/LICENSE.txt
 addons/metamod_x64.vdf
 addons/metamod.vdf
 
-log_api/cover.out
-log_api/vendor/
+log_parser/cover.out
+log_parser/vendor/
 
 traefik/acme/
 

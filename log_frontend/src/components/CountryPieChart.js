@@ -7,7 +7,7 @@ const CountryPieChart = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    fetch("https://api.rulat-bot.duckdns.org/api/v1/graph?type=top-country")
+    fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/graph?type=top-country")
       .then(response => response.json())
       .then(jsonData => {
         if (jsonData && jsonData.data) {

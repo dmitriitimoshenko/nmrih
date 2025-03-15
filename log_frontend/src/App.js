@@ -15,7 +15,7 @@ function App() {
 
   const handleRefresh = () => {
     setLoading(true);
-    fetch("https://api.rulat-bot.duckdns.org/api/v1/parse", {
+    fetch("https://log-parser.rulat-bot.duckdns.org/api/v1/parse", {
       cache: 'no-cache'
     })
       .then(response => response.json())

@@ -3,7 +3,7 @@ package a2sclient
 import (
 	"fmt"
 
-	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient/config"
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/app/a2sclient/config"
 	"github.com/rumblefrog/go-a2s"
 )
 

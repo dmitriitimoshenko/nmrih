@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
+	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/dto"
 )
 
 type CSVGenerator struct{}

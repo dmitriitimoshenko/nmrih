@@ -6,6 +6,6 @@ COPY . /app
 
 RUN make go-mod
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -o /log_api
+RUN CGO_ENABLED=0 GOOS=linux go build -o /log_parser
 
-CMD ["/log_api"]
+CMD ["/log_parser"]
