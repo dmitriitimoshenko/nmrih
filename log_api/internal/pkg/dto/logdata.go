@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/enums"
+	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
 )
 
 type LogData struct {

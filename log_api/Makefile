@@ -3,10 +3,10 @@ test-go:
 	go test ./...
 
 docker-image-build:
-	docker build -t log_parser:latest .
+	docker build -t log_api:latest .
 
 docker-run:
-	docker run -d log_parser:latest
+	docker run -d log_api:latest
 
 docker-stop-and-remove:
 	docker ps -q | xargs -r docker stop && \

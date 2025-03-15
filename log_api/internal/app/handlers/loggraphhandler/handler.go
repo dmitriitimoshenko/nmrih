@@ -3,7 +3,7 @@ package loggraphhandler
 import (
 	"net/http"
 
-	"github.com/dmitriitimoshenko/nmrih/log_parser/internal/pkg/enums"
+	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
 	"github.com/gin-gonic/gin"
 )
 
