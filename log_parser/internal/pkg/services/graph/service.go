@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"log"
 	"math"
 	"sort"
 	"time"
@@ -243,16 +244,21 @@ func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
 	return playersInfoDto
 }
 
-func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
-	sort.Slice(logs, func(i, j int) bool {
-		return logs[i].TimeStamp.Before(logs[j].TimeStamp)
+func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistics {
+	sort.Slice(logsInput, func(i, j int) bool {
+		return logsInput[i].TimeStamp.Before(logsInput[j].TimeStamp)
 	})
 
 	requestTimeStamp := time.Now()
 	earliestLogEntry := requestTimeStamp
-	for _, logEntry := range logs {
+	var logs []*dto.LogData
+	for _, logEntry := range logsInput {
+		if logEntry.Action != enums.Actions.Connected() && logEntry.Action != enums.Actions.Disconnected() {
+			continue
+		}
 		if logEntry.TimeStamp.Before(earliestLogEntry) {
 			earliestLogEntry = logEntry.TimeStamp
+			logs = append(logs, logEntry)
 		}
 	}
 
@@ -290,7 +296,6 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 			}
 		}
 	}
-
 	if len(activeConnections) > 0 {
 		for nickName := range activeConnections {
 			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(logs, nickName)
@@ -305,6 +310,8 @@ func (s *Service) OnlineStatistics(logs []*dto.LogData) dto.OnlineStatistics {
 			delete(activeConnections, nickName)
 		}
 	}
+
+	log.Printf("[GraphService][OnlineStatistics] time gone: %ds; sessions: %+v\n", time.Since(requestTimeStamp), sessions)
 
 	timelineStart := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
 	timelineEnd := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
