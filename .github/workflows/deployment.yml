@@ -24,6 +24,6 @@ jobs:
             git switch main
             git pull origin main
             make docker-re-run
-            # make docker-clean-up
+            make docker-clean-up
             docker images
             docker ps -a

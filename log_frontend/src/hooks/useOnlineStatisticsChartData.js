@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const useOnlineStatisticsData = () => {
+const useOnlineStatisticsChartData = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -19,4 +19,4 @@ const useOnlineStatisticsData = () => {
   return { data };
 };
 
-export default useOnlineStatisticsData;
+export default useOnlineStatisticsChartData;

@@ -17,12 +17,9 @@ function App() {
   const { onlineStatisticsChartData } = useOnlineStatisticsChartData();
   const { width } = useWindowDimensions();
 
-  console.log(onlineStatisticsChartData);
-
   const dashBoardUpperPart = (
     <div className="App">
       <h1>Krich Casual NMRiH Server Dashboard</h1>
-      
       <table>
         <tbody>
           <tr>
