@@ -10,8 +10,6 @@ import './App.css';
 
 function App() {
   const { topTimeChartData } = useTopTimeChartData();
-  const { countryPieChartData } = useCountryPieChartData();
-  const { playersInfoData } = usePlayersInfo();
   const { width } = useWindowDimensions();
 
   const dashBoardUpperPart = (
@@ -28,41 +26,49 @@ function App() {
               </div>
             </td>
           </tr>
-            {width <= 800 ? (
-              <div>
-                <tr>
-                  <td>
-                    <h3>Top Countries</h3>
-                    <div className="pie-chart-container">
-                      <CountryPieChart data={ countryPieChartData }/>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <h3>Player Info</h3>
-                    <div className="players-info">
-                      <PlayersInfo data={ playersInfoData }/>
-                    </div>
-                  </td>
-                </tr>
-              </div>
-            ) : (
+          {width <= 800 ? (
+            <div>
               <tr>
                 <td>
                   <h3>Top Countries</h3>
                   <div className="pie-chart-container">
-                    <CountryPieChart data={ countryPieChartData }/>
-                  </div>
-                </td>
-                <td>
-                  <h3>Player Info</h3>
-                  <div className="players-info">
-                    <PlayersInfo data={ playersInfoData }/>
+                    <CountryPieChart/>
                   </div>
                 </td>
               </tr>
-            ) }
+              <tr>
+                <td>
+                  <h3>Player Info</h3>
+                  <div className="players-info">
+                    <PlayersInfo/>
+                  </div>
+                </td>
+              </tr>
+            </div>
+          ) : (
+            <tr>
+              <td>
+                <h3>Top Countries</h3>
+                <div className="pie-chart-container">
+                  <CountryPieChart/>
+                </div>
+              </td>
+              <td>
+                <h3>Player Info</h3>
+                <div className="players-info">
+                  <PlayersInfo/>
+                </div>
+              </td>
+            </tr>
+          )}
+          <tr>
+            <td colSpan="2">
+              <h3>Online Statistics</h3>
+              <div className="graph-container">
+                <TopTimeChart/>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
