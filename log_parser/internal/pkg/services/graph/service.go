@@ -311,7 +311,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	log.Printf("[GraphService][OnlineStatistics] time gone: %ds; sessions: %+v\n", time.Since(requestTimeStamp), sessions)
+	log.Printf("[GraphService][OnlineStatistics] time gone: %.1fs; sessions: %+v\n", time.Since(requestTimeStamp).Seconds(), sessions)
 
 	timelineStart := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
 	timelineEnd := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
