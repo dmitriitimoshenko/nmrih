@@ -148,6 +148,8 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 					}
 					for _, ip := range ipMatches {
 						logDataEntry.IPAddress = ip
+						// very bad fix - to be refactored
+						time.Sleep(time.Second)
 						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
 						if err != nil {
 							return nil, fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
