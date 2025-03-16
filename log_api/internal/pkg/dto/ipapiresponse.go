@@ -1,5 +1,3 @@
 package dto
 
-type IPInfo struct {
-	Country string `json:"country"`
-}
+type IPInfo map[string]string

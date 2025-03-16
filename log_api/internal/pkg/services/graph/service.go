@@ -173,8 +173,9 @@ func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageLi
 		if logEntry.Action == enums.Actions.Connected() {
 			if logEntry.Country == "" {
 				countriesConnectionsList["Unknown"]++
+			} else {
+				countriesConnectionsList[logEntry.Country]++
 			}
-			countriesConnectionsList[logEntry.Country]++
 			allConnectionsCount++
 		}
 	}

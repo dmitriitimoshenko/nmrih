@@ -95,9 +95,10 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 	return nil
 }
 
-func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, error) {
+func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]*dto.LogData, error) {
 	var (
-		logData []dto.LogData
+		logData []*dto.LogData
+		ipList  []string
 		i       int
 	)
 
@@ -148,20 +149,31 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 					}
 					for _, ip := range ipMatches {
 						logDataEntry.IPAddress = ip
-						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
-						if err != nil {
-							return nil, fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
-						}
-						logDataEntry.Country = ipInfo.Country
+						ipList = append(ipList, ip)
 					}
 				}
 			}
 
-			logData = append(logData, logDataEntry)
+			logData = append(logData, &logDataEntry)
 		}
 
 		if err := scanner.Err(); err != nil {
 			return nil, fmt.Errorf("error reading log extracted from file \"%s\": %w", fileName, err)
+		}
+	}
+
+	ipInfo, err := s.ipAPIClient.GetCountriesByIPs(ipList)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get countries by IPs: %w", err)
+	}
+	for _, logEntry := range logData {
+		if logEntry.Action == enums.Actions.Connected() && logEntry.IPAddress != "" {
+			country, ok := ipInfo[logEntry.IPAddress]
+			if !ok {
+				log.Printf("failed to find ip in ip api response map: %s/n", logEntry.IPAddress)
+				continue
+			}
+			logEntry.Country = country
 		}
 	}
 

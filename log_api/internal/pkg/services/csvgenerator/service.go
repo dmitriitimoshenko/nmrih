@@ -16,7 +16,7 @@ func NewCSVGenerator() *CSVGenerator {
 	return &CSVGenerator{}
 }
 
-func (c *CSVGenerator) Generate(logData []dto.LogData) ([]byte, *time.Time, error) {
+func (c *CSVGenerator) Generate(logData []*dto.LogData) ([]byte, *time.Time, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 
