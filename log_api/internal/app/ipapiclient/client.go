@@ -44,6 +44,8 @@ func (c *IPAPIClient) GetCountriesByIPs(ips []string) (dto.IPInfo, error) {
 		return nil, fmt.Errorf("failed to marshall data [%+v]: %w", payload, err)
 	}
 
+	fmt.Println(string(encodedPyaload))
+
 	reader := bytes.NewReader(encodedPyaload)
 	request, err := http.NewRequest(http.MethodPost, "http://ip-api.com/batch", reader)
 	if err != nil {
@@ -53,8 +55,6 @@ func (c *IPAPIClient) GetCountriesByIPs(ips []string) (dto.IPInfo, error) {
 	request.Header.Set("User-Agent", "Batch-Example/1.0")
 
 	client := http.Client{}
-
-	fmt.Println("going to do a request")
 
 	response, err := client.Do(request)
 	if err != nil {
