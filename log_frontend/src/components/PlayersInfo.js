@@ -5,10 +5,11 @@ const PlayersInfo = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("https://api.rulat-bot.duckdns.org/api/v1/graph?type=players-info")
+    fetch("https://api.rulat-bot.duckdns.org/api/v1/graph?type=players-info", {
+      cache: 'no-cache'
+    })
       .then(response => response.json())
       .then(jsonData => {
-        // Expect jsonData of the form: { data: { count: number, player: [ {...}, ... ] } }
         setPlayersInfo(jsonData.data);
       })
       .catch(err => {

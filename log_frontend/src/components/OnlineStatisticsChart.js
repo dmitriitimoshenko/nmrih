@@ -14,7 +14,9 @@ const OnlineStatisticsChart = () => {
   const [data, setData] = useState([]);
   
   useEffect(() => {
-    fetch("https://api.rulat-bot.duckdns.org/api/v1/graph?type=online-statistics")
+    fetch("https://api.rulat-bot.duckdns.org/api/v1/graph?type=online-statistics", {
+      cache: 'no-cache'
+    })
       .then(response => response.json())
       .then(jsonData => {
         if (jsonData && jsonData.data) {
