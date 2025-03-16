@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 )
@@ -29,6 +28,8 @@ func NewIPAPIClient() *IPAPIClient {
 }
 
 func (c *IPAPIClient) GetCountriesByIPs(ips []string) (dto.IPInfo, error) {
+	fmt.Println("IPs: ", ips)
+
 	var payload []getCountriesByIPsPayload
 	for _, ip := range ips {
 		payload = append(payload, getCountriesByIPsPayload{
@@ -49,10 +50,11 @@ func (c *IPAPIClient) GetCountriesByIPs(ips []string) (dto.IPInfo, error) {
 		return nil, fmt.Errorf("failed to compose request: %w", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("User-Agent", "Batch-Example/1.0")
 
-	client := http.Client{
-		Timeout: 30 * time.Second,
-	}
+	client := http.Client{}
+
+	fmt.Println("going to do a request")
 
 	response, err := client.Do(request)
 	if err != nil {
