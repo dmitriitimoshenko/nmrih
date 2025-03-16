@@ -11,7 +11,7 @@ type LogRepository interface {
 }
 
 type CSVGenerator interface {
-	Generate(logData []*dto.LogData) ([]byte, *time.Time, error)
+	Generate(logData []dto.LogData) ([]byte, *time.Time, error)
 }
 
 type CSVRepository interface {
@@ -20,5 +20,5 @@ type CSVRepository interface {
 }
 
 type IPAPIClient interface {
-	GetCountriesByIPs(ips []string) (dto.IPInfo, error)
+	GetCountryByIP(ip string) (*dto.IPInfo, error)
 }
