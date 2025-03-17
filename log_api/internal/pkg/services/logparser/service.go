@@ -100,10 +100,10 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 	var (
 		logData []dto.LogData
 		wg      sync.WaitGroup
-		errs    []error
 	)
-	errChan := make(chan error)
-	logDataChan := make(chan dto.LogData)
+
+	errChan := make(chan error, 100)
+	logDataChan := make(chan dto.LogData, 100)
 
 	for fileName, page := range logs {
 		wg.Add(1)
@@ -138,10 +138,10 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 					break
 				}
 				timeStampStr := line[2:23]
-
 				parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
 				if err != nil {
 					errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
+					continue
 				}
 				if !parsedTime.After(dateFrom) {
 					continue
@@ -155,18 +155,17 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 					if len(ipMatches) > 1 {
 						log.Println("[WARN] Found more than one IP address in the line [", i, "] of the file [", fileName, "]")
 					}
-					for _, ip := range ipMatches {
-						logDataEntry.IPAddress = ip
-						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
-						if err != nil {
-							errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
-						}
-						logDataEntry.Country = ipInfo.Country
+					ip := ipMatches[len(ipMatches)-1]
+					logDataEntry.IPAddress = ip
+					ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
+					if err != nil {
+						errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
+						continue
 					}
+					logDataEntry.Country = ipInfo.Country
 				}
 
 				logDataChan <- logDataEntry
-
 			}
 
 			if err := scanner.Err(); err != nil {
@@ -181,16 +180,27 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 		close(errChan)
 	}()
 
-	for err := range errChan {
-		errs = append(errs, err)
-	}
-	if errs != nil {
-		return nil, errs
-	}
-	for logDataChanElem := range logDataChan {
-		logData = append(logData, logDataChanElem)
+	var errs []error
+	for logDataChan != nil || errChan != nil {
+		select {
+		case data, opened := <-logDataChan:
+			if !opened {
+				logDataChan = nil
+				continue
+			}
+			logData = append(logData, data)
+		case err, opened := <-errChan:
+			if !opened {
+				errChan = nil
+				continue
+			}
+			errs = append(errs, err)
+		}
 	}
 
+	if len(errs) > 0 {
+		return nil, errs
+	}
 	return logData, nil
 }
 
