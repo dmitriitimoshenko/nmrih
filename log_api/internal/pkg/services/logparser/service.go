@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
@@ -52,9 +53,9 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 
 	log.Printf("[LogParseService] Found %d logs\n", len(logs))
 
-	mappedLogs, err := s.mapLogs(logs, *dateFromPtr)
-	if err != nil {
-		return fmt.Errorf("failed to structurize the logs: %w", err)
+	mappedLogs, errs := s.mapLogs(logs, *dateFromPtr)
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to structurize the logs: %v", errs)
 	}
 
 	log.Printf("[LogParseService] Mapped %d logs\n", len(mappedLogs))
@@ -95,76 +96,91 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 	return nil
 }
 
-func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, error) {
+func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, []error) {
 	var (
 		logData []dto.LogData
-		i       int
+		wg      sync.WaitGroup
+		errs    []error
 	)
 
 	for fileName, page := range logs {
-		linesCount := s.countLines(page)
-		if linesCount == 0 {
-			continue
-		}
+		wg.Add(1)
+		go func(page []byte, errs []error) {
+			defer wg.Done()
 
-		i = 0
-
-		scanner := bufio.NewScanner(bytes.NewReader(page))
-		for scanner.Scan() {
-			i++
-			line := scanner.Text()
-
-			logDataEntry := dto.LogData{}
-			if strings.Contains(line, enums.Actions.Entered().String()) {
-				logDataEntry.Action = enums.Actions.Entered()
-			} else if strings.Contains(line, enums.Actions.Disconnected().String()) {
-				logDataEntry.Action = enums.Actions.Disconnected()
-			} else if strings.Contains(line, enums.Actions.Connected().String()) {
-				logDataEntry.Action = enums.Actions.Connected()
-			} else if strings.Contains(line, enums.Actions.CommittedSuicideAction().String()) {
-				logDataEntry.Action = enums.Actions.CommittedSuicideAction()
-			} else {
-				continue
+			linesCount := s.countLines(page)
+			if linesCount == 0 {
+				return
 			}
 
-			if linesCount > i {
-				timeStampStr := line[2:23]
+			i := 0
+			scanner := bufio.NewScanner(bytes.NewReader(page))
+			for scanner.Scan() {
+				i++
+				line := scanner.Text()
 
-				parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
-				}
-				if !parsedTime.After(dateFrom) {
+				logDataEntry := dto.LogData{}
+				if strings.Contains(line, enums.Actions.Entered().String()) {
+					logDataEntry.Action = enums.Actions.Entered()
+				} else if strings.Contains(line, enums.Actions.Disconnected().String()) {
+					logDataEntry.Action = enums.Actions.Disconnected()
+				} else if strings.Contains(line, enums.Actions.Connected().String()) {
+					logDataEntry.Action = enums.Actions.Connected()
+				} else if strings.Contains(line, enums.Actions.CommittedSuicideAction().String()) {
+					logDataEntry.Action = enums.Actions.CommittedSuicideAction()
+				} else {
 					continue
 				}
 
-				logDataEntry.TimeStamp = parsedTime
-				logDataEntry.NickName = line[26:strings.Index(line, "<")]
+				if linesCount > i {
+					timeStampStr := line[2:23]
 
-				if logDataEntry.Action == enums.Actions.Connected() {
-					ipMatches := tools.IPRegex.FindAllString(line, -1)
-					if len(ipMatches) > 1 {
-						log.Println("[WARN] Found more than one IP address in the line [", i, "] of the file [", fileName, "]")
+					parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
+					if err != nil {
+						errs = append(
+							errs,
+							fmt.Errorf("failed to parse timeStamp from extracted log: %w", err),
+						)
 					}
-					for _, ip := range ipMatches {
-						logDataEntry.IPAddress = ip
-						// very bad fix - to be refactored
-						time.Sleep(time.Second)
-						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
-						if err != nil {
-							return nil, fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
+					if !parsedTime.After(dateFrom) {
+						continue
+					}
+
+					logDataEntry.TimeStamp = parsedTime
+					logDataEntry.NickName = line[26:strings.Index(line, "<")]
+
+					if logDataEntry.Action == enums.Actions.Connected() {
+						ipMatches := tools.IPRegex.FindAllString(line, -1)
+						if len(ipMatches) > 1 {
+							log.Println("[WARN] Found more than one IP address in the line [", i, "] of the file [", fileName, "]")
 						}
-						logDataEntry.Country = ipInfo.Country
+						for _, ip := range ipMatches {
+							logDataEntry.IPAddress = ip
+							ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
+							if err != nil {
+								errs = append(
+									errs,
+									fmt.Errorf("failed to get country by IP [%s]: %w", ip, err),
+								)
+							}
+							logDataEntry.Country = ipInfo.Country
+						}
 					}
 				}
+
+				logData = append(logData, logDataEntry)
 			}
 
-			logData = append(logData, logDataEntry)
-		}
-
-		if err := scanner.Err(); err != nil {
-			return nil, fmt.Errorf("error reading log extracted from file \"%s\": %w", fileName, err)
-		}
+			if err := scanner.Err(); err != nil {
+				errs = append(
+					errs,
+					fmt.Errorf("error reading log extracted from file \"%s\": %w", fileName, err),
+				)
+			}
+		}(page, errs)
+	}
+	if len(errs) > 0 {
+		return nil, errs
 	}
 
 	return logData, nil
