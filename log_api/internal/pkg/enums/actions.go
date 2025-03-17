@@ -26,7 +26,7 @@ func (a Action) String() string {
 
 type actions struct{}
 
-func (actions) Entered() Action                { return enteredAction }
-func (actions) Connected() Action              { return connectedAction }
-func (actions) Disconnected() Action           { return disconnectedAction }
-func (actions) CommittedSuicideAction() Action { return committedSuicideAction }
+func (actions) Entered() Action          { return enteredAction }
+func (actions) Connected() Action        { return connectedAction }
+func (actions) Disconnected() Action     { return disconnectedAction }
+func (actions) CommittedSuicide() Action { return committedSuicideAction }

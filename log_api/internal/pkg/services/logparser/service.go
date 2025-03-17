@@ -102,10 +102,12 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 		wg      sync.WaitGroup
 		errs    []error
 	)
+	errChan := make(chan error)
+	logDataChan := make(chan dto.LogData)
 
 	for fileName, page := range logs {
 		wg.Add(1)
-		go func(page []byte, errs []error) {
+		go func(fileName string, page []byte) {
 			defer wg.Done()
 
 			linesCount := s.countLines(page)
@@ -126,61 +128,67 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 					logDataEntry.Action = enums.Actions.Disconnected()
 				} else if strings.Contains(line, enums.Actions.Connected().String()) {
 					logDataEntry.Action = enums.Actions.Connected()
-				} else if strings.Contains(line, enums.Actions.CommittedSuicideAction().String()) {
-					logDataEntry.Action = enums.Actions.CommittedSuicideAction()
+				} else if strings.Contains(line, enums.Actions.CommittedSuicide().String()) {
+					logDataEntry.Action = enums.Actions.CommittedSuicide()
 				} else {
 					continue
 				}
 
-				if linesCount > i {
-					timeStampStr := line[2:23]
+				if linesCount <= i {
+					break
+				}
+				timeStampStr := line[2:23]
 
-					parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
-					if err != nil {
-						errs = append(
-							errs,
-							fmt.Errorf("failed to parse timeStamp from extracted log: %w", err),
-						)
+				parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
+				if err != nil {
+					errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
+				}
+				if !parsedTime.After(dateFrom) {
+					continue
+				}
+
+				logDataEntry.TimeStamp = parsedTime
+				logDataEntry.NickName = line[26:strings.Index(line, "<")]
+
+				if logDataEntry.Action == enums.Actions.Connected() {
+					ipMatches := tools.IPRegex.FindAllString(line, -1)
+					if len(ipMatches) > 1 {
+						log.Println("[WARN] Found more than one IP address in the line [", i, "] of the file [", fileName, "]")
 					}
-					if !parsedTime.After(dateFrom) {
-						continue
-					}
-
-					logDataEntry.TimeStamp = parsedTime
-					logDataEntry.NickName = line[26:strings.Index(line, "<")]
-
-					if logDataEntry.Action == enums.Actions.Connected() {
-						ipMatches := tools.IPRegex.FindAllString(line, -1)
-						if len(ipMatches) > 1 {
-							log.Println("[WARN] Found more than one IP address in the line [", i, "] of the file [", fileName, "]")
+					for _, ip := range ipMatches {
+						logDataEntry.IPAddress = ip
+						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
+						if err != nil {
+							errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
 						}
-						for _, ip := range ipMatches {
-							logDataEntry.IPAddress = ip
-							ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
-							if err != nil {
-								errs = append(
-									errs,
-									fmt.Errorf("failed to get country by IP [%s]: %w", ip, err),
-								)
-							}
-							logDataEntry.Country = ipInfo.Country
-						}
+						logDataEntry.Country = ipInfo.Country
 					}
 				}
 
-				logData = append(logData, logDataEntry)
+				logDataChan <- logDataEntry
+
 			}
 
 			if err := scanner.Err(); err != nil {
-				errs = append(
-					errs,
-					fmt.Errorf("error reading log extracted from file \"%s\": %w", fileName, err),
-				)
+				errChan <- fmt.Errorf("error reading log extracted from file \"%s\": %w", fileName, err)
 			}
-		}(page, errs)
+		}(fileName, page)
 	}
-	if len(errs) > 0 {
+
+	go func() {
+		wg.Wait()
+		close(logDataChan)
+		close(errChan)
+	}()
+
+	for err := range errChan {
+		errs = append(errs, err)
+	}
+	if errs != nil {
 		return nil, errs
+	}
+	for logDataChanElem := range logDataChan {
+		logData = append(logData, logDataChanElem)
 	}
 
 	return logData, nil
