@@ -1,0 +1,80 @@
+services:
+  traefik:
+      depends_on:
+        log_api:
+          condition: service_healthy
+      build:
+        dockerfile: Dockerfile
+        context: traefik
+      image: "nmrih_traefik:latest"
+      container_name: nmrih_traefik
+      restart: on-failure
+      command:
+        - "--log.level=DEBUG"
+        - "--api.dashboard=false"
+        - "--api.insecure=false"
+        - "--entryPoints.http.address=:80"
+        - "--entryPoints.https.address=:443"
+        - "--providers.docker=true"
+        - "--providers.docker.exposedbydefault=false"
+        - "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=http"
+        - "--certificatesResolvers.myresolver.acme.email=meistersservice@gmail.com"
+        - "--certificatesResolvers.myresolver.acme.storage=/etc/traefik/acme/acme.json"
+      ports:
+        - "80:80"
+        - "443:443"
+      volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock:ro"
+        - "./traefik/acme:/etc/traefik/acme"
+      networks:
+        - traefik-net
+
+  log_api:
+    container_name: nmrih_log_api
+    image: "nmrih_log_api:latest"
+    build:
+      dockerfile: Dockerfile
+      context: log_api
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8090/health-check | grep 200 || exit 1"]
+      timeout: 3s
+      retries: 3
+      start_period: 3s
+    volumes:
+      - shared_data:/data
+      - ./logs:/logs
+    ports:
+      - "8090"
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.log_api-secure.rule=Host(`api.rulat-bot.duckdns.org`)"
+      - "traefik.http.routers.log_api-secure.entryPoints=https"
+      - "traefik.http.routers.log_api-secure.tls=true"
+      - "traefik.http.routers.log_api-secure.tls.certresolver=myresolver"
+
+  log_frontend:
+    container_name: nmrih_log_frontend
+    image: nmrih_log_frontend:latest
+    build:
+      dockerfile: Dockerfile
+      context: log_frontend
+    ports:
+      - "8091"
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.log_frontend-secure.tls=true"
+      # HTTPS
+      - "traefik.http.routers.log_frontend-secure.rule=Host(`rulat-bot.duckdns.org`)"
+      - "traefik.http.routers.log_frontend-secure.entryPoints=https"
+      - "traefik.http.routers.log_frontend-secure.tls.certresolver=myresolver"
+
+volumes:
+  shared_data:
+
+networks:
+  traefik-net:
+    driver: bridge

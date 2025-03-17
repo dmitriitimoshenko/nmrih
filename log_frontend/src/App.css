@@ -1,0 +1,115 @@
+table {
+  margin: 0 auto;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+td {
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  width: 50%;
+}
+
+body, .App {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.App {
+  padding: 20px;
+}
+
+.controls {
+  margin: 20px 0;
+  row-gap: 10px;
+}
+
+.controls button {
+  background-color: #444;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  margin: 8px;
+}
+
+.controls button:hover:not(:disabled) {
+  background-color: #666;
+}
+
+.loader {
+  margin-top: 10px;
+}
+
+.graph-container {
+  width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
+  margin: 0 auto 20px;
+}
+
+.chart-and-info-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.pie-chart-container,
+.players-info {
+  flex: 1;
+  max-width: 100%;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  height: 500px;
+  box-sizing: border-box;
+}
+
+/* Медиа-запрос для мобильных устройств */
+@media screen and (max-width: 768px) {
+  .chart-and-info-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Переопределяем стили для контейнера круговой диаграммы */
+  .pie-chart-container {
+    max-width: 100% !important;
+    height: 400px !important; /* Указываем фиксированную высоту */
+  }
+
+  .players-info {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.players-info h4 {
+  margin-top: 0;
+}
+
+.players-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.players-info li {
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #222;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
