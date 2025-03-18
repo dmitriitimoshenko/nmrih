@@ -17,6 +17,7 @@ import (
 
 const (
 	maxConcurrentGoroutines = 100
+	minLogLineLength        = 27
 	dateTimeCSVLayout       = "2006-01-02 15:04:05"
 	dateTimeLogLayout       = "01/02/2006 - 15:04:05"
 )
@@ -180,7 +181,7 @@ func (s *Service) parseLogLine(fileName, line string, dateFrom time.Time) (*dto.
 		return nil, nil
 	}
 
-	if len(line) < 27 {
+	if len(line) < minLogLineLength {
 		return nil, fmt.Errorf("line too short to parse required fields: %q", line)
 	}
 
