@@ -2,6 +2,7 @@ package logrepository
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -26,6 +27,8 @@ func (s *Service) GetLogs() (map[string][]byte, error) {
 
 	// map [ file name ] -> content
 	logs := make(map[string][]byte)
+
+	log.Println(files)
 
 	for _, file := range files {
 		data, err := os.ReadFile(file)

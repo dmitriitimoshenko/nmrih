@@ -2,12 +2,11 @@ package csvrepository_test
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/csvrepository"
-	"github.com/joho/godotenv"
+	"github.com/dmitriitimoshenko/nmrih/log_api/internal/tools/testhelper"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,16 +31,9 @@ func TestService_GetLastSavedDate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
+			th := testhelper.NewTestHelper(t)
+			th.UseTestEnv()
 
-			homeDir := "/home/runner/work/nmrih"
-			_, err := os.ReadDir(homeDir)
-			if err != nil {
-				homeDir, err = os.UserHomeDir()
-				assert.NoError(t, err)
-			}
-
-			envPath := filepath.Join(homeDir, "nmrih", "log_api", ".env.test")
-			assert.NoError(t, godotenv.Load(envPath))
 			cfg := csvrepository.NewConfig(os.Getenv("CSV_STORAGE_DIRECTORY"))
 			service := csvrepository.NewService(*cfg)
 			actualDateTime, err := service.GetLastSavedDate()
