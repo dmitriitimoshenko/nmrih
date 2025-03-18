@@ -31,6 +31,11 @@ func TestService_GetLastSavedDate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
+
+			wd, err := os.Getwd()
+			assert.NoError(t, err)
+			assert.Equal(t, "", wd)
+
 			homeDir, err := os.UserHomeDir()
 			assert.NoError(t, err)
 			envPath := filepath.Join(homeDir, "nmrih", "log_api", ".env.test")
