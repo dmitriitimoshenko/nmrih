@@ -11,8 +11,13 @@ import (
 )
 
 const (
-	topPlayersCount = 32
-	topCountries    = 9
+	topPlayersCount             = 32
+	topCountries                = 9
+	minSessionDurationInMinutes = 10
+
+	secondsInHour = 3600.0
+	hoursInDay    = 24
+	maxCentsCount = 100
 )
 
 type Service struct {
@@ -199,7 +204,7 @@ func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageLi
 	topCountriesPercentageList := make(dto.TopCountriesPercentageList, 0, len(topCountriesList))
 	otherPercentage := 100.0
 	for _, topCountry := range topCountriesList {
-		percentage := float64(topCountry.ConnectionsCount) / float64(allConnectionsCount) * 100
+		percentage := float64(topCountry.ConnectionsCount) / float64(allConnectionsCount) * maxCentsCount
 		otherPercentage -= percentage
 		topCountriesPercentageList = append(topCountriesPercentageList, dto.TopCountriesPercentage{
 			Country:    topCountry.Country,
@@ -309,7 +314,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	minSessionDuration := 10 * time.Minute
+	minSessionDuration := minSessionDurationInMinutes * time.Minute
 	validSessions := make([]dto.Session, 0, len(sessions))
 	for _, sess := range sessions {
 		if sess.End.Sub(sess.Start) >= minSessionDuration {
@@ -340,14 +345,14 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 	)
 
 	dayCount := 0
-	for d := timelineStart; d.Before(timelineEnd); d = d.Add(24 * time.Hour) {
+	for d := timelineStart; d.Before(timelineEnd); d = d.Add(hoursInDay * time.Hour) {
 		dayCount++
 	}
 	if dayCount == 0 {
 		dayCount = 1
 	}
 
-	hourlyOverlap := make([]float64, 24)
+	hourlyOverlap := make([]float64, hoursInDay)
 
 	for _, session := range sessions {
 		effectiveStart := session.Start
@@ -355,8 +360,8 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 			effectiveStart = timelineStart
 		}
 		effectiveEnd := session.End
-		if effectiveEnd.After(timelineEnd.Add(24 * time.Hour)) {
-			effectiveEnd = timelineEnd.Add(24 * time.Hour)
+		if effectiveEnd.After(timelineEnd.Add(hoursInDay * time.Hour)) {
+			effectiveEnd = timelineEnd.Add(hoursInDay * time.Hour)
 		}
 		if !effectiveEnd.After(effectiveStart) {
 			continue
@@ -383,9 +388,9 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	avgHourlyStats := make(dto.OnlineStatistics, 0, 24)
+	avgHourlyStats := make(dto.OnlineStatistics, 0, hoursInDay)
 	for hour, totalOverlap := range hourlyOverlap {
-		avg := totalOverlap / (float64(dayCount) * 3600.0)
+		avg := totalOverlap / (float64(dayCount) * secondsInHour)
 		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
 			Hour:                   hour,
 			ConcurrentPlayersCount: avg,

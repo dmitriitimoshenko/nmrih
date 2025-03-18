@@ -14,6 +14,8 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/tools"
 )
 
+const maxConcurrentGoroutines = 100
+
 type Service struct {
 	logRepository LogRepository
 	csvGenerator  CSVGenerator
@@ -103,8 +105,8 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 		wg      sync.WaitGroup
 	)
 
-	errChan := make(chan error, 100)
-	logDataChan := make(chan dto.LogData, 100)
+	errChan := make(chan error, maxConcurrentGoroutines)
+	logDataChan := make(chan dto.LogData, maxConcurrentGoroutines)
 
 	for fileName, page := range logs {
 		wg.Add(1)
