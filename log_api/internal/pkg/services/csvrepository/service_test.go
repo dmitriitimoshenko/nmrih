@@ -32,8 +32,8 @@ func TestService_GetLastSavedDate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			homeDir := "/home/runner/work"
-			_, err := os.ReadDir("/home/runner/work")
+			homeDir := "/home/runner/work/nmrih"
+			_, err := os.ReadDir(homeDir)
 			if err != nil {
 				homeDir, err = os.UserHomeDir()
 				assert.NoError(t, err)
