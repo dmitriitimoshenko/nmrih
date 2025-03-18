@@ -3,6 +3,7 @@ package csvparser
 import (
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -10,6 +11,8 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
 )
+
+const minValuesCount = 4
 
 type Service struct{}
 
@@ -26,12 +29,12 @@ func (s *Service) Parse(data []byte) ([]*dto.LogData, error) {
 	}
 
 	if len(records) < 1 {
-		return nil, fmt.Errorf("csv does not contain header")
+		return nil, errors.New("csv does not contain header")
 	}
 
 	var results []*dto.LogData
 	for i, record := range records[1:] {
-		if len(record) < 4 {
+		if len(record) < minValuesCount {
 			log.Println("record is too short, skipping: line No.", i+1)
 			continue
 		}

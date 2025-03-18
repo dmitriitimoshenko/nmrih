@@ -25,7 +25,7 @@ func (s *Service) Save(csvBytes []byte, requestTimeStamp time.Time) error {
 	fileName := fmt.Sprintf("logs_%s.csv", requestTimeStamp.Format("2006-01-02_15:04:05"))
 	filePath := filepath.Join(csvStorageDirectory, fileName)
 
-	if err := os.WriteFile(filePath, csvBytes, 0644); err != nil {
+	if err := os.WriteFile(filePath, csvBytes, 0600); err != nil {
 		return fmt.Errorf("failed to write CSV file: %w", err)
 	}
 

@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"log"
 	"math"
 	"sort"
 	"time"
@@ -12,9 +11,13 @@ import (
 )
 
 const (
-	topPlayersCount = 32
-	topCountries    = 9
-	breakHourNumber = 4
+	topPlayersCount             = 32
+	topCountries                = 9
+	minSessionDurationInMinutes = 10
+
+	secondsInHour = 3600.0
+	hoursInDay    = 24
+	maxCentsCount = 100
 )
 
 type Service struct {
@@ -95,7 +98,7 @@ func (s *Service) getTotalSessionsDuration(logs []*dto.LogData) map[string]time.
 	if len(lastConnected) > 0 {
 		// If there are still connected users at the end of the logs
 		// Add their current session duration to the total
-		for nickName, _ := range lastConnected {
+		for nickName := range lastConnected {
 			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(
 				logs,
 				nickName,
@@ -201,7 +204,7 @@ func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageLi
 	topCountriesPercentageList := make(dto.TopCountriesPercentageList, 0, len(topCountriesList))
 	otherPercentage := 100.0
 	for _, topCountry := range topCountriesList {
-		percentage := float64(topCountry.ConnectionsCount) / float64(allConnectionsCount) * 100
+		percentage := float64(topCountry.ConnectionsCount) / float64(allConnectionsCount) * maxCentsCount
 		otherPercentage -= percentage
 		topCountriesPercentageList = append(topCountriesPercentageList, dto.TopCountriesPercentage{
 			Country:    topCountry.Country,
@@ -262,8 +265,99 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	log.Printf("[GraphService][OnlineStatistics][1] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
+	sessions := s.getSessionsFromLogs(logs)
+	sessions = s.filterInvalidSessions(sessions)
 
+	timelineStart := time.Date(
+		earliestLogEntry.Year(),
+		earliestLogEntry.Month(),
+		earliestLogEntry.Day(),
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+	timelineEnd := time.Date(
+		requestTimeStamp.Year(),
+		requestTimeStamp.Month(),
+		requestTimeStamp.Day(),
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	dayCount := 0
+	for d := timelineStart; d.Before(timelineEnd); d = d.Add(hoursInDay * time.Hour) {
+		dayCount++
+	}
+	if dayCount == 0 {
+		dayCount = 1
+	}
+
+	hourlyOverlap := make([]float64, hoursInDay)
+
+	for _, session := range sessions {
+		effectiveStart := session.Start
+		if effectiveStart.Before(timelineStart) {
+			effectiveStart = timelineStart
+		}
+		effectiveEnd := session.End
+		if effectiveEnd.After(timelineEnd.Add(hoursInDay * time.Hour)) {
+			effectiveEnd = timelineEnd.Add(hoursInDay * time.Hour)
+		}
+		if !effectiveEnd.After(effectiveStart) {
+			continue
+		}
+
+		startIndex := int(effectiveStart.Sub(timelineStart).Hours())
+		endIndex := int(math.Ceil(effectiveEnd.Sub(timelineStart).Hours()))
+		for i := startIndex; i < endIndex; i++ {
+			blockStart := timelineStart.Add(time.Duration(i) * time.Hour)
+			blockEnd := blockStart.Add(time.Hour)
+			overlapStart := effectiveStart
+			if blockStart.After(overlapStart) {
+				overlapStart = blockStart
+			}
+			overlapEnd := effectiveEnd
+			if blockEnd.Before(overlapEnd) {
+				overlapEnd = blockEnd
+			}
+			overlap := overlapEnd.Sub(overlapStart).Seconds()
+			if overlap > 0 {
+				bucket := blockStart.Hour()
+				hourlyOverlap[bucket] += overlap
+			}
+		}
+	}
+
+	avgHourlyStats := make(dto.OnlineStatistics, 0, hoursInDay)
+	for hour, totalOverlap := range hourlyOverlap {
+		avg := totalOverlap / (float64(dayCount) * secondsInHour)
+		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
+			Hour:                   hour,
+			ConcurrentPlayersCount: avg,
+		})
+	}
+
+	return append(avgHourlyStats[3:], avgHourlyStats[:4]...)
+}
+
+func (s *Service) filterInvalidSessions(sessions []dto.Session) []dto.Session {
+	minSessionDuration := minSessionDurationInMinutes * time.Minute
+	validSessions := make([]dto.Session, 0, len(sessions))
+	for _, sess := range sessions {
+		if sess.End.Sub(sess.Start) >= minSessionDuration {
+			validSessions = append(validSessions, sess)
+		}
+	}
+	sessions = validSessions
+	return sessions
+}
+
+func (s *Service) getSessionsFromLogs(logs []*dto.LogData) []dto.Session {
 	var sessions []dto.Session
 	activeConnections := make(map[string]time.Time)
 	for _, logEntry := range logs {
@@ -312,77 +406,5 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 			delete(activeConnections, nickName)
 		}
 	}
-
-	minSessionDuration := 10 * time.Minute
-	validSessions := make([]dto.Session, 0, len(sessions))
-	for _, sess := range sessions {
-		if sess.End.Sub(sess.Start) >= minSessionDuration {
-			validSessions = append(validSessions, sess)
-		}
-	}
-	sessions = validSessions
-
-	log.Printf("[GraphService][OnlineStatistics][2] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
-
-	timelineStart := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
-	timelineEnd := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
-
-	dayCount := 0
-	for d := timelineStart; d.Before(timelineEnd); d = d.Add(24 * time.Hour) {
-		dayCount++
-	}
-	if dayCount == 0 {
-		dayCount = 1
-	}
-
-	hourlyOverlap := make([]float64, 24)
-
-	for _, session := range sessions {
-		effectiveStart := session.Start
-		if effectiveStart.Before(timelineStart) {
-			effectiveStart = timelineStart
-		}
-		effectiveEnd := session.End
-		if effectiveEnd.After(timelineEnd.Add(24 * time.Hour)) {
-			effectiveEnd = timelineEnd.Add(24 * time.Hour)
-		}
-		if !effectiveEnd.After(effectiveStart) {
-			continue
-		}
-
-		startIndex := int(effectiveStart.Sub(timelineStart).Hours())
-		endIndex := int(math.Ceil(effectiveEnd.Sub(timelineStart).Hours()))
-		for i := startIndex; i < endIndex; i++ {
-			blockStart := timelineStart.Add(time.Duration(i) * time.Hour)
-			blockEnd := blockStart.Add(time.Hour)
-			overlapStart := effectiveStart
-			if blockStart.After(overlapStart) {
-				overlapStart = blockStart
-			}
-			overlapEnd := effectiveEnd
-			if blockEnd.Before(overlapEnd) {
-				overlapEnd = blockEnd
-			}
-			overlap := overlapEnd.Sub(overlapStart).Seconds()
-			if overlap > 0 {
-				bucket := blockStart.Hour()
-				hourlyOverlap[bucket] += overlap
-			}
-		}
-	}
-
-	log.Printf("[GraphService][OnlineStatistics][3] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
-
-	avgHourlyStats := make(dto.OnlineStatistics, 0, 24)
-	for hour, totalOverlap := range hourlyOverlap {
-		avg := totalOverlap / (float64(dayCount) * 3600.0)
-		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
-			Hour:                   hour,
-			ConcurrentPlayersCount: avg,
-		})
-	}
-
-	log.Printf("[GraphService][OnlineStatistics][4] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
-
-	return append(avgHourlyStats[3:], avgHourlyStats[:4]...)
+	return sessions
 }

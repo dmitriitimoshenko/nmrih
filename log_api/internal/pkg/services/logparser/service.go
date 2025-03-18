@@ -14,6 +14,8 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/tools"
 )
 
+const maxConcurrentGoroutines = 100
+
 type Service struct {
 	logRepository LogRepository
 	csvGenerator  CSVGenerator
@@ -96,14 +98,15 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 	return nil
 }
 
+//nolint:funlen // I prefer to keep it as is for better readability
 func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, []error) {
 	var (
 		logData []dto.LogData
 		wg      sync.WaitGroup
 	)
 
-	errChan := make(chan error, 100)
-	logDataChan := make(chan dto.LogData, 100)
+	errChan := make(chan error, maxConcurrentGoroutines)
+	logDataChan := make(chan dto.LogData, maxConcurrentGoroutines)
 
 	for fileName, page := range logs {
 		wg.Add(1)
@@ -122,15 +125,16 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				line := scanner.Text()
 
 				logDataEntry := dto.LogData{}
-				if strings.Contains(line, enums.Actions.Entered().String()) {
+				switch {
+				case strings.Contains(line, enums.Actions.Entered().String()):
 					logDataEntry.Action = enums.Actions.Entered()
-				} else if strings.Contains(line, enums.Actions.Disconnected().String()) {
+				case strings.Contains(line, enums.Actions.Disconnected().String()):
 					logDataEntry.Action = enums.Actions.Disconnected()
-				} else if strings.Contains(line, enums.Actions.Connected().String()) {
+				case strings.Contains(line, enums.Actions.Connected().String()):
 					logDataEntry.Action = enums.Actions.Connected()
-				} else if strings.Contains(line, enums.Actions.CommittedSuicide().String()) {
+				case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
 					logDataEntry.Action = enums.Actions.CommittedSuicide()
-				} else {
+				default:
 					continue
 				}
 
