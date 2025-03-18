@@ -1,9 +1,10 @@
 package tools_test
 
 import (
+	"testing"
+
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/tools"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestToPtr(t *testing.T) {
