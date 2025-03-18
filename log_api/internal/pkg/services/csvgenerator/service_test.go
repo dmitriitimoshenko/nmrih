@@ -1,12 +1,13 @@
 package csvgenerator_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/csvgenerator"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestCSVGenerator_Generate(t *testing.T) {
