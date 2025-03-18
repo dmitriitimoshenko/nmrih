@@ -32,12 +32,19 @@ func TestService_GetLastSavedDate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			wd, err := os.Getwd()
-			assert.NoError(t, err)
-			assert.Equal(t, "", wd)
+			homeDir := "/home/runner/work"
+			// Get the list of files and directories in the current directory
+			files, err := os.ReadDir("/home/runner/work")
+			if err != nil {
+				homeDir, err = os.UserHomeDir()
+				assert.NoError(t, err)
+			}
 
-			homeDir, err := os.UserHomeDir()
-			assert.NoError(t, err)
+			// Print the names of the files and directories
+			for _, file := range files {
+				assert.Equal(t, "", file.Name())
+			}
+
 			envPath := filepath.Join(homeDir, "nmrih", "log_api", ".env.test")
 			assert.NoError(t, godotenv.Load(envPath))
 			cfg := csvrepository.NewConfig(os.Getenv("CSV_STORAGE_DIRECTORY"))
