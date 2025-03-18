@@ -14,7 +14,11 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/tools"
 )
 
-const maxConcurrentGoroutines = 100
+const (
+	maxConcurrentGoroutines = 100
+	dateTimeCSVLayout       = "2006-01-02 15:04:05"
+	dateTimeLogLayout       = "01/02/2006 - 15:04:05"
+)
 
 type Service struct {
 	logRepository LogRepository
@@ -46,7 +50,7 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 		dateFromPtr = tools.ToPtr(time.Date(2025, time.March, 1, 0, 0, 0, 0, time.Local))
 	}
 
-	log.Printf("[LogParseService] Parsing logs from %s\n", dateFromPtr.Format("2006-01-02 15:04:05"))
+	log.Printf("[LogParseService] Parsing logs from %s\n", dateFromPtr.Format(dateTimeCSVLayout))
 
 	logs, err := s.logRepository.GetLogs()
 	if err != nil {
@@ -80,14 +84,14 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 	if lastLogTime == nil {
 		log.Print("[LogParseService] Last log time is nil\n")
 	} else {
-		log.Printf("[LogParseService] Last log time is %s\n", lastLogTime.Format("2006-01-02 15:04:05"))
+		log.Printf("[LogParseService] Last log time is %s\n", lastLogTime.Format(dateTimeCSVLayout))
 	}
 
 	if lastLogTime == nil {
 		lastLogTime = &requestTimeStamp
 	}
 
-	log.Printf("[LogParseService] Last log time is ANYWAY %s\n", lastLogTime.Format("2006-01-02 15:04:05"))
+	log.Printf("[LogParseService] Last log time is ANYWAY %s\n", lastLogTime.Format(dateTimeCSVLayout))
 
 	if err := s.csvRepository.Save(csvBytes, *lastLogTime); err != nil {
 		return fmt.Errorf("failed to save mapped logs as CSV: %w", err)
@@ -142,7 +146,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 					break
 				}
 				timeStampStr := line[2:23]
-				parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
+				parsedTime, err := time.Parse(dateTimeLogLayout, timeStampStr)
 				if err != nil {
 					errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
 					continue
