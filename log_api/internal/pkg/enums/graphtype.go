@@ -7,6 +7,7 @@ const (
 	onlineStatisticsGraphType = "online-statistics"
 )
 
+//nolint:gochecknoglobals // enum can ignore it
 var GraphTypes graphTypes
 
 type GraphType string

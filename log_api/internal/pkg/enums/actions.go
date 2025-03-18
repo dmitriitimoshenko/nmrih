@@ -7,6 +7,7 @@ const (
 	committedSuicideAction = "committed suicide"
 )
 
+//nolint:gochecknoglobals // enum can ignore it
 var Actions actions
 
 type Action string

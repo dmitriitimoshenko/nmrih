@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"log"
 	"math"
 	"sort"
 	"time"
@@ -14,7 +13,6 @@ import (
 const (
 	topPlayersCount = 32
 	topCountries    = 9
-	breakHourNumber = 4
 )
 
 type Service struct {
@@ -95,7 +93,7 @@ func (s *Service) getTotalSessionsDuration(logs []*dto.LogData) map[string]time.
 	if len(lastConnected) > 0 {
 		// If there are still connected users at the end of the logs
 		// Add their current session duration to the total
-		for nickName, _ := range lastConnected {
+		for nickName := range lastConnected {
 			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(
 				logs,
 				nickName,
@@ -262,8 +260,6 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	log.Printf("[GraphService][OnlineStatistics][1] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
-
 	var sessions []dto.Session
 	activeConnections := make(map[string]time.Time)
 	for _, logEntry := range logs {
@@ -322,10 +318,26 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 	}
 	sessions = validSessions
 
-	log.Printf("[GraphService][OnlineStatistics][2] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
-
-	timelineStart := time.Date(earliestLogEntry.Year(), earliestLogEntry.Month(), earliestLogEntry.Day(), 0, 0, 0, 0, time.UTC)
-	timelineEnd := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
+	timelineStart := time.Date(
+		earliestLogEntry.Year(),
+		earliestLogEntry.Month(),
+		earliestLogEntry.Day(),
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+	timelineEnd := time.Date(
+		requestTimeStamp.Year(),
+		requestTimeStamp.Month(),
+		requestTimeStamp.Day(),
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
 
 	dayCount := 0
 	for d := timelineStart; d.Before(timelineEnd); d = d.Add(24 * time.Hour) {
@@ -371,8 +383,6 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	log.Printf("[GraphService][OnlineStatistics][3] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
-
 	avgHourlyStats := make(dto.OnlineStatistics, 0, 24)
 	for hour, totalOverlap := range hourlyOverlap {
 		avg := totalOverlap / (float64(dayCount) * 3600.0)
@@ -381,8 +391,6 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 			ConcurrentPlayersCount: avg,
 		})
 	}
-
-	log.Printf("[GraphService][OnlineStatistics][4] time gone: %.5fs\n", time.Since(requestTimeStamp).Seconds())
 
 	return append(avgHourlyStats[3:], avgHourlyStats[:4]...)
 }
