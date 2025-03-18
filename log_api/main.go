@@ -38,13 +38,7 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 func main() {
-	var err error
-	switch {
-	case os.Getenv("ENV") == "test":
-		err = godotenv.Load(".env.test")
-	default:
-		err = godotenv.Load(".env")
-	}
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalln(err)
 	}
