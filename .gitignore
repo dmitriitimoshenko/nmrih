@@ -17,3 +17,5 @@
 !traefik/**
 
 log_api/vendor
+log_api/main
+log_api/cover.out

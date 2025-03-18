@@ -1,0 +1,8 @@
+L 03/07/2013 - 19:14:19: Log file started (file "logs/Lxxxxxxx.log") (game "xxx") (version "xxx")
+L 03/07/2013 - 19:16:18: "EXAMPLE<15><[U:1:xxxxxxxxxx]><>" connected, address "123.123.123.123:19191"
+L 03/07/2013 - 19:16:18: "EXAMPLE<15><[U:1:xxxxxxxxxx]><>" STEAM USERID validated
+L 03/07/2013 - 19:16:21: "EXAMPLE<15><[U:1:xxxxxxxxxx]><>" entered the game
+L 03/07/2013 - 19:16:31: "EXAMPLE<15><[U:1:xxxxxxxxxx]><#SDK_Team_Unassigned>" disconnected (reason "Disconnect by user.")
+L 03/07/2013 - 19:16:31: "EXAMPLE<15><[U:1:xxxxxxxxxx]><>" committed suicide with "player"
+L 03/07/2013 - 19:37:57: [META] Loaded 0 plugins (1 already loaded)
+L 03/07/2013 - 19:37:57: Log file closed.

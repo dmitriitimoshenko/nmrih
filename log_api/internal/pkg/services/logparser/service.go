@@ -157,7 +157,13 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				if logDataEntry.Action == enums.Actions.Connected() {
 					ipMatches := tools.IPRegex.FindAllString(line, -1)
 					if len(ipMatches) > 1 {
-						log.Println("[WARN] Found more than one IP address in the line [", i, "] of the file [", fileName, "]")
+						log.Println(
+							"[WARN] Found more than one IP address in the line [",
+							i,
+							"] of the file [",
+							fileName,
+							"]",
+						)
 					}
 					ip := ipMatches[len(ipMatches)-1]
 					logDataEntry.IPAddress = ip

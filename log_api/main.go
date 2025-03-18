@@ -48,7 +48,9 @@ func main() {
 	server.Use(gin.Recovery())
 	server.Use(CORSMiddleware())
 
-	gin.SetMode(os.Getenv("GIN_MODE"))
+	ginMode := os.Getenv("GIN_MODE")
+	log.Println("GIN Mode set to: ", ginMode)
+	gin.SetMode(ginMode)
 
 	serverPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
 	if err != nil {
@@ -65,9 +67,11 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	logRepositoryService := logrepository.NewService()
+	logRepositoryConfig := logrepository.NewConfig(os.Getenv("LOG_FILES_PATTERN"))
+	logRepositoryService := logrepository.NewService(*logRepositoryConfig)
 	csvGeneratorService := csvgenerator.NewCSVGenerator()
-	csvRepositoryService := csvrepository.NewService()
+	csvRepositoryConfig := csvrepository.NewConfig(os.Getenv("CSV_STORAGE_DIRECTORY"))
+	csvRepositoryService := csvrepository.NewService(*csvRepositoryConfig)
 	csvParserService := csvparser.NewService()
 	graphService := graph.NewService(a2sClient)
 
@@ -78,8 +82,8 @@ func main() {
 		ipAPIClient,
 	)
 
-	logparserhandler := logparserhandler.NewLogParserHandler(logParserService)
-	loggraphhandler := loggraphhandler.NewLogGraphHandler(csvRepositoryService, csvParserService, graphService)
+	logParserHandler := logparserhandler.NewLogParserHandler(logParserService)
+	logGraphHandler := loggraphhandler.NewLogGraphHandler(csvRepositoryService, csvParserService, graphService)
 
 	server.GET("/health-check", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -88,8 +92,8 @@ func main() {
 	})
 
 	apiv1 := server.Group("/api/v1")
-	apiv1.GET("/parse", logparserhandler.Parse)
-	apiv1.GET("/graph", loggraphhandler.Graph)
+	apiv1.GET("/parse", logParserHandler.Parse)
+	apiv1.GET("/graph", logGraphHandler.Graph)
 
 	ports := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	err = server.Run(ports)

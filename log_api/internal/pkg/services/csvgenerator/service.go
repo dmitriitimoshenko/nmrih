@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"log"
 	"sort"
 	"time"
 
@@ -17,6 +18,11 @@ func NewCSVGenerator() *CSVGenerator {
 }
 
 func (c *CSVGenerator) Generate(logData []dto.LogData) ([]byte, *time.Time, error) {
+	if len(logData) == 0 {
+		log.Printf("no log data to generate CSV\n")
+		return nil, nil, nil
+	}
+
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 
