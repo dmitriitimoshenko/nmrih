@@ -201,13 +201,6 @@ linters-settings:
     # Default: ""
     context: "scope"
 
-  tenv:
-    # The option `all` will run against whole test files (`_test.go`) regardless of method/function signatures.
-    # Otherwise, only methods that take `*testing.T`, `*testing.B`, and `testing.TB` as arguments are checked.
-    # Default: false
-    all: true
-
-
 linters:
   # disable-all: true
   disable:
@@ -228,7 +221,6 @@ linters:
     - dupword # [useless without config] checks for duplicate words in the source code
     - err113 # [too strict] checks the errors handling expressions
     - errchkjson # [don't see profit + I'm against of omitting errors like in the first example https://github.com/breml/errchkjson] checks types passed to the json encoding functions. Reports unsupported types and optionally reports occasions, where the check for the returned error can be omitted
-    - execinquery # [deprecated] checks query string in Query function which reads your Go src files and warning it finds
     - forcetypeassert # [replaced by errcheck] finds forced type assertions
     - gofmt # [replaced by goimports] checks whether code was gofmt-ed
     - gofumpt # [replaced by goimports, gofumports is not available yet] checks whether code was gofumpt-ed
@@ -277,7 +269,6 @@ linters:
     - errname # checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error
     - errorlint # finds code that will cause problems with the error wrapping scheme introduced in Go 1.13
     - exhaustive # checks exhaustiveness of enum switch statements
-    - exportloopref # checks for pointers to enclosing loop variables
     - fatcontext # detects nested contexts in loops
     - funlen # tool for detection of long functions
     - gocheckcompilerdirectives # validates go compiler directive comments (//go:)
@@ -315,7 +306,6 @@ linters:
     - spancheck # checks for mistakes with OpenTelemetry/Census spans
     - sqlclosecheck # checks that sql.Rows and sql.Stmt are closed
     - stylecheck # is a replacement for golint
-    - tenv # detects using os.Setenv instead of t.Setenv since Go1.17
     - testableexamples # checks if examples are testable (have an expected output)
     - testpackage # makes you use a separate _test package
     - tparallel # detects inappropriate usage of t.Parallel() method in your Go test codes
