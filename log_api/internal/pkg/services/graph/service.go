@@ -265,63 +265,8 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		}
 	}
 
-	var sessions []dto.Session
-	activeConnections := make(map[string]time.Time)
-	for _, logEntry := range logs {
-		switch logEntry.Action {
-		case enums.Actions.Connected():
-			if _, exists := activeConnections[logEntry.NickName]; !exists {
-				activeConnections[logEntry.NickName] = logEntry.TimeStamp
-				continue
-			}
-			lastActivityTimeStamp := s.findLastUserActivityTimeStampBefore(
-				logs,
-				logEntry.TimeStamp,
-				logEntry.NickName,
-			)
-			if lastActivityTimeStamp == nil {
-				continue
-			}
-			sessions = append(sessions, dto.Session{
-				NickName: logEntry.NickName,
-				Start:    activeConnections[logEntry.NickName],
-				End:      *lastActivityTimeStamp,
-			})
-			delete(activeConnections, logEntry.NickName)
-		case enums.Actions.Disconnected():
-			if start, exists := activeConnections[logEntry.NickName]; exists {
-				sessions = append(sessions, dto.Session{
-					NickName: logEntry.NickName,
-					Start:    start,
-					End:      logEntry.TimeStamp,
-				})
-				delete(activeConnections, logEntry.NickName)
-			}
-		}
-	}
-	if len(activeConnections) > 0 {
-		for nickName := range activeConnections {
-			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(logs, nickName)
-			if lastActivityTimeStamp == nil {
-				continue
-			}
-			sessions = append(sessions, dto.Session{
-				NickName: nickName,
-				Start:    activeConnections[nickName],
-				End:      *lastActivityTimeStamp,
-			})
-			delete(activeConnections, nickName)
-		}
-	}
-
-	minSessionDuration := minSessionDurationInMinutes * time.Minute
-	validSessions := make([]dto.Session, 0, len(sessions))
-	for _, sess := range sessions {
-		if sess.End.Sub(sess.Start) >= minSessionDuration {
-			validSessions = append(validSessions, sess)
-		}
-	}
-	sessions = validSessions
+	sessions := s.getSessionsFromLogs(logs)
+	sessions = s.filterInvalidSessions(sessions)
 
 	timelineStart := time.Date(
 		earliestLogEntry.Year(),
@@ -398,4 +343,68 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 	}
 
 	return append(avgHourlyStats[3:], avgHourlyStats[:4]...)
+}
+
+func (s *Service) filterInvalidSessions(sessions []dto.Session) []dto.Session {
+	minSessionDuration := minSessionDurationInMinutes * time.Minute
+	validSessions := make([]dto.Session, 0, len(sessions))
+	for _, sess := range sessions {
+		if sess.End.Sub(sess.Start) >= minSessionDuration {
+			validSessions = append(validSessions, sess)
+		}
+	}
+	sessions = validSessions
+	return sessions
+}
+
+func (s *Service) getSessionsFromLogs(logs []*dto.LogData) []dto.Session {
+	var sessions []dto.Session
+	activeConnections := make(map[string]time.Time)
+	for _, logEntry := range logs {
+		switch logEntry.Action {
+		case enums.Actions.Connected():
+			if _, exists := activeConnections[logEntry.NickName]; !exists {
+				activeConnections[logEntry.NickName] = logEntry.TimeStamp
+				continue
+			}
+			lastActivityTimeStamp := s.findLastUserActivityTimeStampBefore(
+				logs,
+				logEntry.TimeStamp,
+				logEntry.NickName,
+			)
+			if lastActivityTimeStamp == nil {
+				continue
+			}
+			sessions = append(sessions, dto.Session{
+				NickName: logEntry.NickName,
+				Start:    activeConnections[logEntry.NickName],
+				End:      *lastActivityTimeStamp,
+			})
+			delete(activeConnections, logEntry.NickName)
+		case enums.Actions.Disconnected():
+			if start, exists := activeConnections[logEntry.NickName]; exists {
+				sessions = append(sessions, dto.Session{
+					NickName: logEntry.NickName,
+					Start:    start,
+					End:      logEntry.TimeStamp,
+				})
+				delete(activeConnections, logEntry.NickName)
+			}
+		}
+	}
+	if len(activeConnections) > 0 {
+		for nickName := range activeConnections {
+			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(logs, nickName)
+			if lastActivityTimeStamp == nil {
+				continue
+			}
+			sessions = append(sessions, dto.Session{
+				NickName: nickName,
+				Start:    activeConnections[nickName],
+				End:      *lastActivityTimeStamp,
+			})
+			delete(activeConnections, nickName)
+		}
+	}
+	return sessions
 }
