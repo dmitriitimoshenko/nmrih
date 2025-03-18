@@ -2,30 +2,24 @@ package logrepository
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 )
 
-const (
-	logsStorageDirectory = "/logs/"
-	logFileNamePattern   = "l*.log"
-)
+type Service struct {
+	config Config
+}
 
-type Service struct{}
-
-func NewService() *Service {
-	return &Service{}
+func NewService(config Config) *Service {
+	return &Service{config: config}
 }
 
 func (s *Service) GetLogs() (map[string][]byte, error) {
-	pattern := filepath.Join(logsStorageDirectory, logFileNamePattern)
-	files, err := filepath.Glob(pattern)
+	files, err := filepath.Glob(s.config.LogFilesPattern)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for log files: %w", err)
 	}
 
-	log.Println("[LogRepositoryService] Count of files found: ", files)
 	if files == nil {
 		return nil, nil
 	}
