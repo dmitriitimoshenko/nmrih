@@ -1,0 +1,25 @@
+name: Lint
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  push:
+    branches:
+      - main
+
+jobs:
+  golangci-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+      - name: Set up
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.0'
+      - name: Lint Go
+        uses: golangci/golangci-lint-action@v6.5.1
+        with:
+          working-directory: ./log_api
+          version: v1.64.8
+          args: --config=golangci.yaml
