@@ -3,6 +3,7 @@ package logparser
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -59,9 +60,9 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 
 	log.Printf("[LogParseService] Found %d logs\n", len(logs))
 
-	mappedLogs, errs := s.mapLogs(logs, *dateFromPtr)
-	if len(errs) > 0 {
-		return fmt.Errorf("failed to structurize the logs: %v", errs)
+	mappedLogs, err := s.mapLogs(logs, *dateFromPtr)
+	if err != nil {
+		return fmt.Errorf("failed to structurize the logs: %w", err)
 	}
 
 	log.Printf("[LogParseService] Mapped %d logs\n", len(mappedLogs))
@@ -102,90 +103,19 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 	return nil
 }
 
-//nolint:funlen // I prefer to keep it as is for better readability
-func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, []error) {
+func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, error) {
 	var (
-		logData []dto.LogData
-		wg      sync.WaitGroup
+		wg          sync.WaitGroup
+		logDataChan = make(chan dto.LogData, maxConcurrentGoroutines)
+		errChan     = make(chan error, maxConcurrentGoroutines)
 	)
 
-	errChan := make(chan error, maxConcurrentGoroutines)
-	logDataChan := make(chan dto.LogData, maxConcurrentGoroutines)
-
-	for fileName, page := range logs {
+	for fileName, content := range logs {
 		wg.Add(1)
-		go func(fileName string, page []byte) {
+		go func(fileName string, content []byte, dateFrom time.Time) {
 			defer wg.Done()
-
-			linesCount := s.countLines(page)
-			if linesCount == 0 {
-				return
-			}
-
-			i := 0
-			scanner := bufio.NewScanner(bytes.NewReader(page))
-			for scanner.Scan() {
-				i++
-				line := scanner.Text()
-
-				logDataEntry := dto.LogData{}
-				switch {
-				case strings.Contains(line, enums.Actions.Entered().String()):
-					logDataEntry.Action = enums.Actions.Entered()
-				case strings.Contains(line, enums.Actions.Disconnected().String()):
-					logDataEntry.Action = enums.Actions.Disconnected()
-				case strings.Contains(line, enums.Actions.Connected().String()):
-					logDataEntry.Action = enums.Actions.Connected()
-				case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
-					logDataEntry.Action = enums.Actions.CommittedSuicide()
-				default:
-					continue
-				}
-
-				if linesCount <= i {
-					break
-				}
-				timeStampStr := line[2:23]
-				parsedTime, err := time.Parse(dateTimeLogLayout, timeStampStr)
-				if err != nil {
-					errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
-					continue
-				}
-				if !parsedTime.After(dateFrom) {
-					continue
-				}
-
-				logDataEntry.TimeStamp = parsedTime
-				logDataEntry.NickName = line[26:strings.Index(line, "<")]
-
-				if logDataEntry.Action == enums.Actions.Connected() {
-					ipMatches := tools.IPRegex.FindAllString(line, -1)
-					if len(ipMatches) > 1 {
-						log.Println(
-							"[WARN] Found more than one IP address in the line [",
-							i,
-							"] of the file [",
-							fileName,
-							"]",
-						)
-					}
-					ip := ipMatches[len(ipMatches)-1]
-					logDataEntry.IPAddress = ip
-					ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
-					if err != nil {
-						errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
-						continue
-					}
-					logDataEntry.Country = ipInfo.Country
-				}
-
-				logDataChan <- logDataEntry
-			}
-
-			if err := scanner.Err(); err != nil {
-				errChan <- fmt.Errorf("error reading log extracted from file \"%s\": %w", fileName, err)
-			}
-		}(fileName, page)
+			s.processLogFile(fileName, content, dateFrom, logDataChan, errChan)
+		}(fileName, content, dateFrom)
 	}
 
 	go func() {
@@ -194,35 +124,103 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 		close(errChan)
 	}()
 
+	var logEntries []dto.LogData
+	for entry := range logDataChan {
+		logEntries = append(logEntries, entry)
+	}
 	var errs []error
-	for logDataChan != nil || errChan != nil {
-		select {
-		case data, opened := <-logDataChan:
-			if !opened {
-				logDataChan = nil
-				continue
-			}
-			logData = append(logData, data)
-		case err, opened := <-errChan:
-			if !opened {
-				errChan = nil
-				continue
-			}
-			errs = append(errs, err)
-		}
+	for err := range errChan {
+		errs = append(errs, err)
 	}
-
 	if len(errs) > 0 {
-		return nil, errs
+		return nil, errors.Join(errs...)
 	}
-	return logData, nil
+	return logEntries, nil
 }
 
-func (s *Service) countLines(data []byte) int {
-	scanner := bufio.NewScanner(bytes.NewReader(data))
-	lineCount := 0
-	for scanner.Scan() {
-		lineCount++
+func (s *Service) processLogFile(
+	fileName string,
+	content []byte,
+	dateFrom time.Time,
+	logDataChan chan<- dto.LogData,
+	errChan chan<- error,
+) {
+	if len(content) == 0 {
+		return
 	}
-	return lineCount
+	scanner := bufio.NewScanner(bytes.NewReader(content))
+	for scanner.Scan() {
+		line := scanner.Text()
+		entry, err := s.parseLogLine(fileName, line, dateFrom)
+		if err != nil {
+			errChan <- fmt.Errorf("file %s: %w", fileName, err)
+			continue
+		}
+		if entry != nil {
+			logDataChan <- *entry
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		errChan <- fmt.Errorf("error scanning file %s: %w", fileName, err)
+	}
+}
+
+func (s *Service) parseLogLine(fileName, line string, dateFrom time.Time) (*dto.LogData, error) {
+	var action enums.Action
+	switch {
+	case strings.Contains(line, enums.Actions.Entered().String()):
+		action = enums.Actions.Entered()
+	case strings.Contains(line, enums.Actions.Disconnected().String()):
+		action = enums.Actions.Disconnected()
+	case strings.Contains(line, enums.Actions.Connected().String()):
+		action = enums.Actions.Connected()
+	case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
+		action = enums.Actions.CommittedSuicide()
+	default:
+		return nil, nil
+	}
+
+	if len(line) < 27 {
+		return nil, fmt.Errorf("line too short to parse required fields: %q", line)
+	}
+
+	// example: "01/02/2006 - 15:04:05"
+	timeStampStr := line[2:23]
+	parsedTime, err := time.Parse(dateTimeLogLayout, timeStampStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse timestamp %q: %w", timeStampStr, err)
+	}
+	if !parsedTime.After(dateFrom) {
+		return nil, nil
+	}
+
+	idx := strings.Index(line, "<")
+	if idx == -1 || idx < 26 {
+		return nil, fmt.Errorf("failed to find nickname in line: %q", line)
+	}
+	nickName := strings.TrimSpace(line[26:idx])
+
+	entry := dto.LogData{
+		Action:    action,
+		TimeStamp: parsedTime,
+		NickName:  nickName,
+	}
+
+	if action == enums.Actions.Connected() {
+		ipMatches := tools.IPRegex.FindAllString(line, -1)
+		if len(ipMatches) == 0 {
+			return nil, fmt.Errorf("no IP address found in line: %q", line)
+		}
+		if len(ipMatches) > 1 {
+			log.Printf("[WARN] file %s: multiple IP addresses found in line, using the last one", fileName)
+		}
+		ip := ipMatches[len(ipMatches)-1]
+		entry.IPAddress = ip
+		ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get country for IP %s: %w", ip, err)
+		}
+		entry.Country = ipInfo.Country
+	}
+	return &entry, nil
 }
