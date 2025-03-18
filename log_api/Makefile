@@ -4,7 +4,7 @@ go-mod:
 	go mod vendor
 	go mod tidy
 
-test-go:
+test:
 	go build main.go
 	go test ./...
 
