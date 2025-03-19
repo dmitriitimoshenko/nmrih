@@ -272,21 +272,13 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		earliestLogEntry.Year(),
 		earliestLogEntry.Month(),
 		earliestLogEntry.Day(),
-		0,
-		0,
-		0,
-		0,
-		time.UTC,
+		0, 0, 0, 0, time.UTC,
 	)
 	timelineEnd := time.Date(
 		requestTimeStamp.Year(),
 		requestTimeStamp.Month(),
 		requestTimeStamp.Day(),
-		0,
-		0,
-		0,
-		0,
-		time.UTC,
+		0, 0, 0, 0, time.UTC,
 	)
 
 	dayCount := 0

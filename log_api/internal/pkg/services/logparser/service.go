@@ -166,7 +166,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 							"]",
 						)
 					}
-					if len(ipMatches) == 0 {
+					if len(ipMatches) <= 0 {
 						log.Println(
 							"[WARN] Found no IP address in the line [",
 							i,
