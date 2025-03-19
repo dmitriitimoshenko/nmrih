@@ -200,7 +200,12 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 	sessions = s.filterInvalidSessions(sessions)
 
 	timelineStart := time.Date(earliest.Year(), earliest.Month(), earliest.Day(), 0, 0, 0, 0, time.UTC)
-	timelineEnd := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
+	timelineEnd := time.Date(
+		requestTimeStamp.Year(),
+		requestTimeStamp.Month(),
+		requestTimeStamp.Day(),
+		0, 0, 0, 0, time.UTC,
+	)
 	dayCount := int(timelineEnd.Sub(timelineStart).Hours() / hoursInDay)
 	if dayCount == 0 {
 		dayCount = 1
