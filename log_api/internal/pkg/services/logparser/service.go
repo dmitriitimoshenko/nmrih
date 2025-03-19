@@ -125,35 +125,12 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				i++
 				line := scanner.Text()
 
-				logDataEntry := dto.LogData{}
-				switch {
-				case strings.Contains(line, enums.Actions.Entered().String()):
-					logDataEntry.Action = enums.Actions.Entered()
-				case strings.Contains(line, enums.Actions.Disconnected().String()):
-					logDataEntry.Action = enums.Actions.Disconnected()
-				case strings.Contains(line, enums.Actions.Connected().String()):
-					logDataEntry.Action = enums.Actions.Connected()
-				case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
-					logDataEntry.Action = enums.Actions.CommittedSuicide()
-				default:
-					continue
-				}
-
 				if linesCount <= i {
 					break
 				}
-				timeStampStr := line[2:23]
-				parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
-				if err != nil {
-					errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
-					continue
-				}
-				if !parsedTime.After(dateFrom) {
-					continue
-				}
 
-				logDataEntry.TimeStamp = parsedTime
-				logDataEntry.NickName = line[26:strings.Index(line, "<")]
+				logDataEntry := dto.LogData{}
+				s.addActionNickAndTimeStamp(line, &logDataEntry, dateFrom, errChan)
 
 				if logDataEntry.Action == enums.Actions.Connected() {
 					s.addCountryIfIPAvailable(i, fileName, line, &logDataEntry, errChan)
@@ -205,6 +182,39 @@ func (s *Service) countLines(data []byte) int {
 		lineCount++
 	}
 	return lineCount
+}
+
+func (s *Service) addActionNickAndTimeStamp(
+	line string,
+	logDataEntry *dto.LogData,
+	dateFrom time.Time,
+	errChan chan error,
+) {
+	switch {
+	case strings.Contains(line, enums.Actions.Entered().String()):
+		logDataEntry.Action = enums.Actions.Entered()
+	case strings.Contains(line, enums.Actions.Disconnected().String()):
+		logDataEntry.Action = enums.Actions.Disconnected()
+	case strings.Contains(line, enums.Actions.Connected().String()):
+		logDataEntry.Action = enums.Actions.Connected()
+	case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
+		logDataEntry.Action = enums.Actions.CommittedSuicide()
+	default:
+		return
+	}
+
+	timeStampStr := line[2:23]
+	parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
+	if err != nil {
+		errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
+		return
+	}
+	if !parsedTime.After(dateFrom) {
+		return
+	}
+
+	logDataEntry.TimeStamp = parsedTime
+	logDataEntry.NickName = line[26:strings.Index(line, "<")]
 }
 
 func (s *Service) addCountryIfIPAvailable(
