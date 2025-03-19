@@ -3,6 +3,7 @@ package logparser
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -55,9 +56,9 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 
 	log.Printf("[LogParseService] Found %d logs\n", len(logs))
 
-	mappedLogs, errs := s.mapLogs(logs, *dateFromPtr)
-	if len(errs) > 0 {
-		return fmt.Errorf("failed to structurize the logs: %v", errs)
+	mappedLogs, err := s.mapLogs(logs, *dateFromPtr)
+	if err != nil {
+		return fmt.Errorf("failed to structurize the logs: %w", err)
 	}
 
 	log.Printf("[LogParseService] Mapped %d logs\n", len(mappedLogs))
@@ -99,7 +100,7 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 }
 
 //nolint:funlen // I prefer to keep it as is for better readability
-func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, []error) {
+func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, error) {
 	var (
 		logData []dto.LogData
 		wg      sync.WaitGroup
@@ -209,7 +210,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 	}
 
 	if len(errs) > 0 {
-		return nil, errs
+		return nil, errors.Join(errs...)
 	}
 	return logData, nil
 }
