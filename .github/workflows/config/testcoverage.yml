@@ -18,3 +18,5 @@ breakdown-file-name: ''
 
 diff:
   base-breakdown-file-name: ''
+
+github-action-output: true
