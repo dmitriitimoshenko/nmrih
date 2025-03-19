@@ -99,7 +99,6 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 	return nil
 }
 
-//nolint:funlen // I prefer to keep it as is for better readability
 func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, error) {
 	var (
 		logData []dto.LogData
