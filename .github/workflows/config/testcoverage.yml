@@ -1,4 +1,4 @@
-profile: cover.out
+profile: log_api/cover.out
 
 threshold:
   # Minimum coverage percentage required for individual files.
