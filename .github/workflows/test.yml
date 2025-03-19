@@ -39,4 +39,4 @@ jobs:
       - name: Check test coverage
         uses: vladopajic/go-test-coverage@v2
         with:
-          config: ./config/testcoverage.yml
+          config: ./.github/workflows/config/testcoverage.yml
