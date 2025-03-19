@@ -16,7 +16,8 @@ func NewService(config Config) *Service {
 }
 
 func (s *Service) GetLogs() (map[string][]byte, error) {
-	files, err := filepath.Glob(s.config.LogFilesPattern)
+	pattern := filepath.Join(s.config.LogDirectory, s.config.LogFilesPattern)
+	files, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for log files: %w", err)
 	}

@@ -31,7 +31,7 @@ func TestService_GetLogs(t *testing.T) {
 			th := testhelper.NewTestHelper(t)
 			th.UseTestEnv()
 
-			cfg := logrepository.NewConfig(os.Getenv("LOGS_STORAGE_PATTERN"))
+			cfg := logrepository.NewConfig(os.Getenv("LOGS_STORAGE_DIRECTORY"), os.Getenv("LOGS_FILE_PATTERN"))
 			service := logrepository.NewService(*cfg)
 			logs, err := service.GetLogs()
 			test.assert(t, logs, err)
