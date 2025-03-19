@@ -156,34 +156,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				logDataEntry.NickName = line[26:strings.Index(line, "<")]
 
 				if logDataEntry.Action == enums.Actions.Connected() {
-					ipMatches := tools.IPRegex.FindAllString(line, -1)
-					if len(ipMatches) > 1 {
-						log.Println(
-							"[WARN] Found more than one IP address in the line [",
-							i,
-							"] of the file [",
-							fileName,
-							"]",
-						)
-					}
-					if len(ipMatches) == 0 {
-						log.Println(
-							"[WARN] Found no IP address in the line [",
-							i,
-							"] of the file [",
-							fileName,
-							"]",
-						)
-					} else {
-						ip := ipMatches[len(ipMatches)-1]
-						logDataEntry.IPAddress = ip
-						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
-						if err != nil {
-							errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
-							continue
-						}
-						logDataEntry.Country = ipInfo.Country
-					}
+					s.addCountryIfIPAvailable(i, fileName, line, &logDataEntry, errChan)
 				}
 
 				logDataChan <- logDataEntry
@@ -232,4 +205,40 @@ func (s *Service) countLines(data []byte) int {
 		lineCount++
 	}
 	return lineCount
+}
+
+func (s *Service) addCountryIfIPAvailable(
+	i int,
+	fileName, line string,
+	logDataEntry *dto.LogData,
+	errChan chan error,
+) {
+	ipMatches := tools.IPRegex.FindAllString(line, -1)
+	if len(ipMatches) > 1 {
+		log.Println(
+			"[WARN] Found more than one IP address in the line [",
+			i,
+			"] of the file [",
+			fileName,
+			"]",
+		)
+	}
+	if len(ipMatches) == 0 {
+		log.Println(
+			"[WARN] Found no IP address in the line [",
+			i,
+			"] of the file [",
+			fileName,
+			"]",
+		)
+	} else {
+		ip := ipMatches[len(ipMatches)-1]
+		logDataEntry.IPAddress = ip
+		ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
+			return
+		}
+		logDataEntry.Country = ipInfo.Country
+	}
 }
