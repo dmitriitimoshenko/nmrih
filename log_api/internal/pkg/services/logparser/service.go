@@ -99,7 +99,6 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 	return nil
 }
 
-//nolint:funlen // I prefer to keep it as is for better readability
 func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.LogData, error) {
 	var (
 		logData []dto.LogData
@@ -125,65 +124,15 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				i++
 				line := scanner.Text()
 
-				logDataEntry := dto.LogData{}
-				switch {
-				case strings.Contains(line, enums.Actions.Entered().String()):
-					logDataEntry.Action = enums.Actions.Entered()
-				case strings.Contains(line, enums.Actions.Disconnected().String()):
-					logDataEntry.Action = enums.Actions.Disconnected()
-				case strings.Contains(line, enums.Actions.Connected().String()):
-					logDataEntry.Action = enums.Actions.Connected()
-				case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
-					logDataEntry.Action = enums.Actions.CommittedSuicide()
-				default:
-					continue
-				}
-
 				if linesCount <= i {
 					break
 				}
-				timeStampStr := line[2:23]
-				parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
-				if err != nil {
-					errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
-					continue
-				}
-				if !parsedTime.After(dateFrom) {
-					continue
-				}
 
-				logDataEntry.TimeStamp = parsedTime
-				logDataEntry.NickName = line[26:strings.Index(line, "<")]
+				logDataEntry := dto.LogData{}
+				s.addActionNickAndTimeStamp(line, &logDataEntry, dateFrom, errChan)
 
 				if logDataEntry.Action == enums.Actions.Connected() {
-					ipMatches := tools.IPRegex.FindAllString(line, -1)
-					if len(ipMatches) > 1 {
-						log.Println(
-							"[WARN] Found more than one IP address in the line [",
-							i,
-							"] of the file [",
-							fileName,
-							"]",
-						)
-					}
-					if len(ipMatches) <= 0 {
-						log.Println(
-							"[WARN] Found no IP address in the line [",
-							i,
-							"] of the file [",
-							fileName,
-							"]",
-						)
-					} else {
-						ip := ipMatches[len(ipMatches)-1]
-						logDataEntry.IPAddress = ip
-						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
-						if err != nil {
-							errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
-							continue
-						}
-						logDataEntry.Country = ipInfo.Country
-					}
+					s.addCountryIfIPAvailable(i, fileName, line, &logDataEntry, errChan)
 				}
 
 				logDataChan <- logDataEntry
@@ -232,4 +181,73 @@ func (s *Service) countLines(data []byte) int {
 		lineCount++
 	}
 	return lineCount
+}
+
+func (s *Service) addActionNickAndTimeStamp(
+	line string,
+	logDataEntry *dto.LogData,
+	dateFrom time.Time,
+	errChan chan error,
+) {
+	switch {
+	case strings.Contains(line, enums.Actions.Entered().String()):
+		logDataEntry.Action = enums.Actions.Entered()
+	case strings.Contains(line, enums.Actions.Disconnected().String()):
+		logDataEntry.Action = enums.Actions.Disconnected()
+	case strings.Contains(line, enums.Actions.Connected().String()):
+		logDataEntry.Action = enums.Actions.Connected()
+	case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
+		logDataEntry.Action = enums.Actions.CommittedSuicide()
+	default:
+		return
+	}
+
+	timeStampStr := line[2:23]
+	parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
+	if err != nil {
+		errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
+		return
+	}
+	if !parsedTime.After(dateFrom) {
+		return
+	}
+
+	logDataEntry.TimeStamp = parsedTime
+	logDataEntry.NickName = line[26:strings.Index(line, "<")]
+}
+
+func (s *Service) addCountryIfIPAvailable(
+	i int,
+	fileName, line string,
+	logDataEntry *dto.LogData,
+	errChan chan error,
+) {
+	ipMatches := tools.IPRegex.FindAllString(line, -1)
+	if len(ipMatches) > 1 {
+		log.Println(
+			"[WARN] Found more than one IP address in the line [",
+			i,
+			"] of the file [",
+			fileName,
+			"]",
+		)
+	}
+	if len(ipMatches) == 0 {
+		log.Println(
+			"[WARN] Found no IP address in the line [",
+			i,
+			"] of the file [",
+			fileName,
+			"]",
+		)
+	} else {
+		ip := ipMatches[len(ipMatches)-1]
+		logDataEntry.IPAddress = ip
+		ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
+			return
+		}
+		logDataEntry.Country = ipInfo.Country
+	}
 }
