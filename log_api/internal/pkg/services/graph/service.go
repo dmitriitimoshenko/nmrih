@@ -71,7 +71,7 @@ func (s *Service) getTotalSessionsDuration(logs []*dto.LogData) map[string]time.
 	}
 
 	for nick := range lastConnected {
-		if lastActivity := s.findLastUserActivityTimeStamp(logs, nick); lastActivity != nil {
+		if lastActivity := s.findLastUserActivityTimeStampBefore(logs, nick, nil); lastActivity != nil {
 			s.addDurationToTotal(nick, *lastActivity, lastConnected, totalDurations)
 		}
 	}
