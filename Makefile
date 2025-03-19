@@ -10,6 +10,6 @@ docker-clean-up:
 	done
 
 export-csv:
-	@echo "Экспорт CSV файлов из контейнера log_api в локальную директорию /tmp..."
+	@echo "Exporting CSV files from log_api container into local /tmp dir..."
 	docker-compose exec log_api tar cf - -C /data *.csv | tar xf - -C /tmp
-	@echo "Экспорт завершён, файлы находятся в /tmp"
+	@echo "Export has been finished, CSVs are already in /tmp"
