@@ -8,3 +8,8 @@ docker-clean-up:
 			docker rmi "$$image"; \
 		fi; \
 	done
+
+export-csv:
+	@echo "Экспорт CSV файлов из контейнера log_api в локальную директорию /tmp..."
+	docker-compose exec log_api tar cf - -C /data *.csv | tar xf - -C /tmp
+	@echo "Экспорт завершён, файлы находятся в /tmp"
