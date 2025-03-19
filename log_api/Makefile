@@ -9,7 +9,7 @@ test:
 	ENV=test go test ./...
 
 test-with-coverage:
-	ENV=test go test -parallel=1 -count=1 ./... -coverprofile cover.out
+	ENV=test go test -parallel=1 -count=1 ./... -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 
 format:
 	golines --base-formatter="gofmt" -w -m 120 --ignored-dirs="vendor tmp data" --ignore-generated .

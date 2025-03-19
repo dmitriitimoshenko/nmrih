@@ -36,8 +36,7 @@ jobs:
         working-directory: ./log_api
         run: make test-with-coverage
 
-      - name: Post Coverage Insights
-        uses: dmitriitimoshenko/go-coverage-insights@v0.1.0
+      - name: Check test coverage
+        uses: vladopajic/go-test-coverage@v2
         with:
-          cover_profile: ./log_api/cover.out
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          config: ./config/testcoverage.yml
