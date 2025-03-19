@@ -7,12 +7,13 @@ import (
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
+	"github.com/dmitriitimoshenko/nmrih/log_api/internal/tools"
 	"github.com/rumblefrog/go-a2s"
 )
 
 const (
 	topPlayersCount             = 32
-	topCountries                = 9
+	topCountriesCount           = 9
 	minSessionDurationInMinutes = 10
 
 	secondsInHour = 3600.0
@@ -29,139 +30,78 @@ func NewService(a2sClient A2SClient) *Service {
 }
 
 func (s *Service) TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList {
-	totalSessionsDurations := s.getTotalSessionsDuration(logs)
+	totalDurations := s.getTotalSessionsDuration(logs)
 
-	topTimeSpentList := make(dto.TopTimeSpentList, 0, len(totalSessionsDurations))
-	for nickName, totalSessionsDuration := range totalSessionsDurations {
-		topTimeSpentList = append(topTimeSpentList, &dto.TopTimeSpent{
-			NickName:  nickName,
-			TimeSpent: totalSessionsDuration,
+	topList := make(dto.TopTimeSpentList, 0, len(totalDurations))
+	for nick, duration := range totalDurations {
+		topList = append(topList, &dto.TopTimeSpent{
+			NickName:  nick,
+			TimeSpent: duration,
 		})
 	}
-
-	sort.Slice(topTimeSpentList, func(i, j int) bool {
-		return topTimeSpentList[i].TimeSpent > topTimeSpentList[j].TimeSpent
+	sort.Slice(topList, func(i, j int) bool {
+		return topList[i].TimeSpent > topList[j].TimeSpent
 	})
-
-	if len(topTimeSpentList) > topPlayersCount {
-		topTimeSpentList = topTimeSpentList[:topPlayersCount]
+	if len(topList) > topPlayersCount {
+		topList = topList[:topPlayersCount]
 	}
-
-	return topTimeSpentList
+	return topList
 }
 
 func (s *Service) getTotalSessionsDuration(logs []*dto.LogData) map[string]time.Duration {
-	totalSessionsDurations := make(map[string]time.Duration)
+	totalDurations := make(map[string]time.Duration)
 	lastConnected := make(map[string]time.Time)
 
-	for _, logEntry := range logs {
-		switch logEntry.Action {
+	for _, entry := range logs {
+		switch entry.Action {
 		case enums.Actions.Connected():
-			{
-				if _, ok := lastConnected[logEntry.NickName]; ok {
-					lastActivityTimeStamp := s.findLastUserActivityTimeStampBefore(
-						logs,
-						logEntry.TimeStamp,
-						logEntry.NickName,
-					)
-					if lastActivityTimeStamp == nil {
-						// Impossible sceanrio, but just in case
-						// If there is no activity at all before the current (second in line) connection, skip
-						continue
-					}
-					s.addDurationToTotal(
-						logEntry.NickName,
-						*lastActivityTimeStamp,
-						lastConnected,
-						totalSessionsDurations,
-					)
+			if _, exists := lastConnected[entry.NickName]; exists {
+				if lastActivity := s.findLastUserActivityTimeStampBefore(
+					logs,
+					entry.NickName,
+					&entry.TimeStamp,
+				); lastActivity != nil {
+					s.addDurationToTotal(entry.NickName, *lastActivity, lastConnected, totalDurations)
 				}
-				lastConnected[logEntry.NickName] = logEntry.TimeStamp
-				break
 			}
-		case enums.Actions.Disconnected():
-			{
-				if _, ok := lastConnected[logEntry.NickName]; !ok {
-					continue
-				}
-				s.addDurationToTotal(
-					logEntry.NickName,
-					logEntry.TimeStamp,
-					lastConnected,
-					totalSessionsDurations,
-				)
-				break
-			}
-		}
-	}
+			lastConnected[entry.NickName] = entry.TimeStamp
 
-	if len(lastConnected) > 0 {
-		// If there are still connected users at the end of the logs
-		// Add their current session duration to the total
-		for nickName := range lastConnected {
-			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(
-				logs,
-				nickName,
-			)
-			if lastActivityTimeStamp == nil {
-				// Impossible sceanrio, but just in case
-				// If there is no activity at all before the current (second in line) connection, skip
+		case enums.Actions.Disconnected():
+			if _, exists := lastConnected[entry.NickName]; !exists {
 				continue
 			}
-			s.addDurationToTotal(
-				nickName,
-				*lastActivityTimeStamp,
-				lastConnected,
-				totalSessionsDurations,
-			)
+			s.addDurationToTotal(entry.NickName, entry.TimeStamp, lastConnected, totalDurations)
 		}
 	}
 
-	return totalSessionsDurations
+	for nick := range lastConnected {
+		if lastActivity := s.findLastUserActivityTimeStampBefore(logs, nick, nil); lastActivity != nil {
+			s.addDurationToTotal(nick, *lastActivity, lastConnected, totalDurations)
+		}
+	}
+	return totalDurations
 }
 
 func (s *Service) addDurationToTotal(
-	nickName string,
-	lastActivityTimeStamp time.Time,
+	nick string,
+	lastActivity time.Time,
 	lastConnected map[string]time.Time,
-	totalSessionsDurations map[string]time.Duration,
+	totalDurations map[string]time.Duration,
 ) {
-	lastSessionDuration := lastActivityTimeStamp.Sub(lastConnected[nickName])
-	totalSessionsDurations[nickName] += lastSessionDuration
-	delete(lastConnected, nickName)
+	sessionDuration := lastActivity.Sub(lastConnected[nick])
+	totalDurations[nick] += sessionDuration
+	delete(lastConnected, nick)
 }
 
-func (s *Service) findLastUserActivityTimeStampBefore(
-	logs []*dto.LogData,
-	before time.Time,
-	nickName string,
-) *time.Time {
+func (s *Service) findLastUserActivityTimeStampBefore(logs []*dto.LogData, nick string, before *time.Time) *time.Time {
 	var lastActivity time.Time
 	for _, entry := range logs {
-		if entry.NickName == nickName && entry.TimeStamp.Before(before) {
-			if entry.TimeStamp.After(lastActivity) {
-				lastActivity = entry.TimeStamp
-			}
-		}
-	}
-
-	if lastActivity.IsZero() {
-		return nil
-	}
-	return &lastActivity
-}
-
-func (s *Service) findLastUserActivityTimeStamp(
-	logs []*dto.LogData,
-	nickName string,
-) *time.Time {
-	var lastActivity time.Time
-	for _, entry := range logs {
-		if entry.NickName == nickName && entry.TimeStamp.After(lastActivity) {
+		if entry.NickName == nick &&
+			(before == nil || entry.TimeStamp.Before(*before)) &&
+			entry.TimeStamp.After(lastActivity) {
 			lastActivity = entry.TimeStamp
 		}
 	}
-
 	if lastActivity.IsZero() {
 		return nil
 	}
@@ -169,55 +109,54 @@ func (s *Service) findLastUserActivityTimeStamp(
 }
 
 func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageList {
-	countriesConnectionsList := make(map[string]int)
-	var allConnectionsCount int
+	countryCounts := make(map[string]int)
+	var totalConnections int
 
-	for _, logEntry := range logs {
-		if logEntry.Action == enums.Actions.Connected() {
-			if logEntry.Country == "" {
-				countriesConnectionsList["Unknown"]++
-			}
-			countriesConnectionsList[logEntry.Country]++
-			allConnectionsCount++
+	for _, entry := range logs {
+		if entry.Action != enums.Actions.Connected() {
+			continue
 		}
+		country := entry.Country
+		if country == "" {
+			country = "Unknown"
+		}
+		countryCounts[country]++
+		totalConnections++
 	}
 
-	topCountriesList := make(dto.TopCountriesList, 0, topCountries)
-	for range topCountries {
-		var (
-			maxConnectionsCount   int
-			maxConnectionsCountry string
-		)
-		for country, connectionsCount := range countriesConnectionsList {
-			if connectionsCount > maxConnectionsCount {
-				maxConnectionsCount = connectionsCount
-				maxConnectionsCountry = country
+	topCountries := make(dto.TopCountriesList, 0, topCountriesCount)
+	for i := 0; i < topCountriesCount && len(countryCounts) > 0; i++ {
+		var maxCount int
+		var topCountry string
+		for country, count := range countryCounts {
+			if count > maxCount {
+				maxCount = count
+				topCountry = country
 			}
 		}
-		topCountriesList = append(topCountriesList, dto.TopCountry{
-			Country:          maxConnectionsCountry,
-			ConnectionsCount: maxConnectionsCount,
+		topCountries = append(topCountries, dto.TopCountry{
+			Country:          topCountry,
+			ConnectionsCount: maxCount,
 		})
-		delete(countriesConnectionsList, maxConnectionsCountry)
+		delete(countryCounts, topCountry)
 	}
 
-	topCountriesPercentageList := make(dto.TopCountriesPercentageList, 0, len(topCountriesList))
-	otherPercentage := 100.0
-	for _, topCountry := range topCountriesList {
-		percentage := float64(topCountry.ConnectionsCount) / float64(allConnectionsCount) * maxCentsCount
-		otherPercentage -= percentage
-		topCountriesPercentageList = append(topCountriesPercentageList, dto.TopCountriesPercentage{
-			Country:    topCountry.Country,
+	var remainingPercentage float64 = maxCentsCount
+	topCountriesPercentage := make(dto.TopCountriesPercentageList, 0, len(topCountries)+1)
+	for _, tc := range topCountries {
+		percentage := float64(tc.ConnectionsCount) / float64(totalConnections) * maxCentsCount
+		remainingPercentage -= percentage
+		topCountriesPercentage = append(topCountriesPercentage, dto.TopCountriesPercentage{
+			Country:    tc.Country,
 			Percentage: percentage,
 		})
 	}
-
-	topCountriesPercentageList = append(topCountriesPercentageList, dto.TopCountriesPercentage{
+	topCountriesPercentage = append(topCountriesPercentage, dto.TopCountriesPercentage{
 		Country:    "Other",
-		Percentage: otherPercentage,
+		Percentage: remainingPercentage,
 	})
 
-	return topCountriesPercentageList
+	return topCountriesPercentage
 }
 
 func (s *Service) PlayersInfo() (*dto.PlayersInfo, error) {
@@ -225,110 +164,70 @@ func (s *Service) PlayersInfo() (*dto.PlayersInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	playersInfoDto := s.mapPlayersInfo(playersInfo)
-
-	return playersInfoDto, nil
+	return s.mapPlayersInfo(playersInfo), nil
 }
 
-func (s *Service) mapPlayersInfo(playersInfo *a2s.PlayerInfo) *dto.PlayersInfo {
-	playersInfoDto := &dto.PlayersInfo{}
-
-	playersInfoDto.Count = int(playersInfo.Count)
-
-	for _, playerInfo := range playersInfo.Players {
-		playersInfoDto.PlayerInfo = append(playersInfoDto.PlayerInfo, &dto.PlayerInfo{
-			Name:     playerInfo.Name,
-			Score:    playerInfo.Score,
-			Duration: playerInfo.Duration,
+func (s *Service) mapPlayersInfo(info *a2s.PlayerInfo) *dto.PlayersInfo {
+	dtoInfo := &dto.PlayersInfo{Count: int(info.Count)}
+	for _, p := range info.Players {
+		dtoInfo.PlayerInfo = append(dtoInfo.PlayerInfo, &dto.PlayerInfo{
+			Name:     p.Name,
+			Score:    p.Score,
+			Duration: p.Duration,
 		})
 	}
-
-	return playersInfoDto
+	return dtoInfo
 }
 
 func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistics {
+	var events []*dto.LogData
 	sort.Slice(logsInput, func(i, j int) bool {
 		return logsInput[i].TimeStamp.Before(logsInput[j].TimeStamp)
 	})
-
 	requestTimeStamp := time.Now()
-	earliestLogEntry := requestTimeStamp
-	var logs []*dto.LogData
-	for _, logEntry := range logsInput {
-		if logEntry.Action != enums.Actions.Connected() && logEntry.Action != enums.Actions.Disconnected() {
+	earliest := requestTimeStamp
+	for _, entry := range logsInput {
+		if entry.Action != enums.Actions.Connected() && entry.Action != enums.Actions.Disconnected() {
 			continue
 		}
-		logs = append(logs, logEntry)
-		if logEntry.TimeStamp.Before(earliestLogEntry) {
-			earliestLogEntry = logEntry.TimeStamp
+		events = append(events, entry)
+		if entry.TimeStamp.Before(earliest) {
+			earliest = entry.TimeStamp
 		}
 	}
 
-	sessions := s.getSessionsFromLogs(logs)
+	sessions := s.getSessionsFromLogs(events)
 	sessions = s.filterInvalidSessions(sessions)
 
-	timelineStart := time.Date(
-		earliestLogEntry.Year(),
-		earliestLogEntry.Month(),
-		earliestLogEntry.Day(),
-		0,
-		0,
-		0,
-		0,
-		time.UTC,
-	)
+	timelineStart := time.Date(earliest.Year(), earliest.Month(), earliest.Day(), 0, 0, 0, 0, time.UTC)
 	timelineEnd := time.Date(
 		requestTimeStamp.Year(),
 		requestTimeStamp.Month(),
 		requestTimeStamp.Day(),
-		0,
-		0,
-		0,
-		0,
-		time.UTC,
+		0, 0, 0, 0, time.UTC,
 	)
-
-	dayCount := 0
-	for d := timelineStart; d.Before(timelineEnd); d = d.Add(hoursInDay * time.Hour) {
-		dayCount++
-	}
+	dayCount := int(timelineEnd.Sub(timelineStart).Hours() / hoursInDay)
 	if dayCount == 0 {
 		dayCount = 1
 	}
 
 	hourlyOverlap := make([]float64, hoursInDay)
-
 	for _, session := range sessions {
-		effectiveStart := session.Start
-		if effectiveStart.Before(timelineStart) {
-			effectiveStart = timelineStart
-		}
-		effectiveEnd := session.End
-		if effectiveEnd.After(timelineEnd.Add(hoursInDay * time.Hour)) {
-			effectiveEnd = timelineEnd.Add(hoursInDay * time.Hour)
-		}
+		effectiveStart := tools.MaxTime(session.Start, timelineStart)
+		effectiveEnd := tools.MinTime(session.End, timelineEnd.Add(hoursInDay*time.Hour))
 		if !effectiveEnd.After(effectiveStart) {
 			continue
 		}
-
-		startIndex := int(effectiveStart.Sub(timelineStart).Hours())
-		endIndex := int(math.Ceil(effectiveEnd.Sub(timelineStart).Hours()))
-		for i := startIndex; i < endIndex; i++ {
+		startIdx := int(effectiveStart.Sub(timelineStart).Hours())
+		endIdx := int(math.Ceil(effectiveEnd.Sub(timelineStart).Hours()))
+		for i := startIdx; i < endIdx && i < hoursInDay; i++ {
 			blockStart := timelineStart.Add(time.Duration(i) * time.Hour)
 			blockEnd := blockStart.Add(time.Hour)
-			overlapStart := effectiveStart
-			if blockStart.After(overlapStart) {
-				overlapStart = blockStart
-			}
-			overlapEnd := effectiveEnd
-			if blockEnd.Before(overlapEnd) {
-				overlapEnd = blockEnd
-			}
+			overlapStart := tools.MaxTime(effectiveStart, blockStart)
+			overlapEnd := tools.MinTime(effectiveEnd, blockEnd)
 			overlap := overlapEnd.Sub(overlapStart).Seconds()
 			if overlap > 0 {
-				bucket := blockStart.Hour()
-				hourlyOverlap[bucket] += overlap
+				hourlyOverlap[i] += overlap
 			}
 		}
 	}
@@ -346,64 +245,56 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 }
 
 func (s *Service) filterInvalidSessions(sessions []dto.Session) []dto.Session {
-	minSessionDuration := minSessionDurationInMinutes * time.Minute
-	validSessions := make([]dto.Session, 0, len(sessions))
+	minDuration := time.Duration(minSessionDurationInMinutes) * time.Minute
+	valid := make([]dto.Session, 0, len(sessions))
 	for _, sess := range sessions {
-		if sess.End.Sub(sess.Start) >= minSessionDuration {
-			validSessions = append(validSessions, sess)
+		if sess.End.Sub(sess.Start) >= minDuration {
+			valid = append(valid, sess)
 		}
 	}
-	sessions = validSessions
-	return sessions
+	return valid
 }
 
 func (s *Service) getSessionsFromLogs(logs []*dto.LogData) []dto.Session {
 	var sessions []dto.Session
-	activeConnections := make(map[string]time.Time)
-	for _, logEntry := range logs {
-		switch logEntry.Action {
+	active := make(map[string]time.Time)
+	for _, entry := range logs {
+		switch entry.Action {
 		case enums.Actions.Connected():
-			if _, exists := activeConnections[logEntry.NickName]; !exists {
-				activeConnections[logEntry.NickName] = logEntry.TimeStamp
+			if _, exists := active[entry.NickName]; !exists {
+				active[entry.NickName] = entry.TimeStamp
 				continue
 			}
-			lastActivityTimeStamp := s.findLastUserActivityTimeStampBefore(
+			if lastActivity := s.findLastUserActivityTimeStampBefore(
 				logs,
-				logEntry.TimeStamp,
-				logEntry.NickName,
-			)
-			if lastActivityTimeStamp == nil {
-				continue
-			}
-			sessions = append(sessions, dto.Session{
-				NickName: logEntry.NickName,
-				Start:    activeConnections[logEntry.NickName],
-				End:      *lastActivityTimeStamp,
-			})
-			delete(activeConnections, logEntry.NickName)
-		case enums.Actions.Disconnected():
-			if start, exists := activeConnections[logEntry.NickName]; exists {
+				entry.NickName,
+				&entry.TimeStamp,
+			); lastActivity != nil {
 				sessions = append(sessions, dto.Session{
-					NickName: logEntry.NickName,
-					Start:    start,
-					End:      logEntry.TimeStamp,
+					NickName: entry.NickName,
+					Start:    active[entry.NickName],
+					End:      *lastActivity,
 				})
-				delete(activeConnections, logEntry.NickName)
+				delete(active, entry.NickName)
+			}
+		case enums.Actions.Disconnected():
+			if start, exists := active[entry.NickName]; exists {
+				sessions = append(sessions, dto.Session{
+					NickName: entry.NickName,
+					Start:    start,
+					End:      entry.TimeStamp,
+				})
+				delete(active, entry.NickName)
 			}
 		}
 	}
-	if len(activeConnections) > 0 {
-		for nickName := range activeConnections {
-			lastActivityTimeStamp := s.findLastUserActivityTimeStamp(logs, nickName)
-			if lastActivityTimeStamp == nil {
-				continue
-			}
+	for nick, start := range active {
+		if lastActivity := s.findLastUserActivityTimeStampBefore(logs, nick, nil); lastActivity != nil {
 			sessions = append(sessions, dto.Session{
-				NickName: nickName,
-				Start:    activeConnections[nickName],
-				End:      *lastActivityTimeStamp,
+				NickName: nick,
+				Start:    start,
+				End:      *lastActivity,
 			})
-			delete(activeConnections, nickName)
 		}
 	}
 	return sessions
