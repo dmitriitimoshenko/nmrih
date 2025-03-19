@@ -166,14 +166,24 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 							"]",
 						)
 					}
-					ip := ipMatches[len(ipMatches)-1]
-					logDataEntry.IPAddress = ip
-					ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
-					if err != nil {
-						errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
-						continue
+					if len(ipMatches) == 0 {
+						log.Println(
+							"[WARN] Found no IP address in the line [",
+							i,
+							"] of the file [",
+							fileName,
+							"]",
+						)
+					} else {
+						ip := ipMatches[len(ipMatches)-1]
+						logDataEntry.IPAddress = ip
+						ipInfo, err := s.ipAPIClient.GetCountryByIP(ip)
+						if err != nil {
+							errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
+							continue
+						}
+						logDataEntry.Country = ipInfo.Country
 					}
-					logDataEntry.Country = ipInfo.Country
 				}
 
 				logDataChan <- logDataEntry
