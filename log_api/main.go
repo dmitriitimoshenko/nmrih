@@ -67,7 +67,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	logRepositoryConfig := logrepository.NewConfig(os.Getenv("LOG_FILES_PATTERN"))
+	logRepositoryConfig := logrepository.NewConfig(os.Getenv("LOGS_STORAGE_DIRECTORY"), os.Getenv("LOGS_FILE_PATTERN"))
 	logRepositoryService := logrepository.NewService(*logRepositoryConfig)
 	csvGeneratorService := csvgenerator.NewCSVGenerator()
 	csvRepositoryConfig := csvrepository.NewConfig(os.Getenv("CSV_STORAGE_DIRECTORY"))
