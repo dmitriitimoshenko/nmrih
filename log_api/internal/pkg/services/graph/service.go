@@ -56,7 +56,11 @@ func (s *Service) getTotalSessionsDuration(logs []*dto.LogData) map[string]time.
 		switch entry.Action {
 		case enums.Actions.Connected():
 			if _, exists := lastConnected[entry.NickName]; exists {
-				if lastActivity := s.findLastUserActivityTimeStampBefore(logs, entry.NickName, &entry.TimeStamp); lastActivity != nil {
+				if lastActivity := s.findLastUserActivityTimeStampBefore(
+					logs,
+					entry.NickName,
+					&entry.TimeStamp,
+				); lastActivity != nil {
 					s.addDurationToTotal(entry.NickName, *lastActivity, lastConnected, totalDurations)
 				}
 			}
@@ -137,7 +141,7 @@ func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageLi
 		delete(countryCounts, topCountry)
 	}
 
-	var remainingPercentage float64 = 100.0
+	var remainingPercentage float64 = maxCentsCount
 	topCountriesPercentage := make(dto.TopCountriesPercentageList, 0, len(topCountries)+1)
 	for _, tc := range topCountries {
 		percentage := float64(tc.ConnectionsCount) / float64(totalConnections) * maxCentsCount
@@ -197,7 +201,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 
 	timelineStart := time.Date(earliest.Year(), earliest.Month(), earliest.Day(), 0, 0, 0, 0, time.UTC)
 	timelineEnd := time.Date(requestTimeStamp.Year(), requestTimeStamp.Month(), requestTimeStamp.Day(), 0, 0, 0, 0, time.UTC)
-	dayCount := int(timelineEnd.Sub(timelineStart).Hours() / 24)
+	dayCount := int(timelineEnd.Sub(timelineStart).Hours() / hoursInDay)
 	if dayCount == 0 {
 		dayCount = 1
 	}
@@ -205,7 +209,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 	hourlyOverlap := make([]float64, hoursInDay)
 	for _, session := range sessions {
 		effectiveStart := tools.MaxTime(session.Start, timelineStart)
-		effectiveEnd := tools.MinTime(session.End, timelineEnd.Add(24*time.Hour))
+		effectiveEnd := tools.MinTime(session.End, timelineEnd.Add(hoursInDay*time.Hour))
 		if !effectiveEnd.After(effectiveStart) {
 			continue
 		}
@@ -256,7 +260,11 @@ func (s *Service) getSessionsFromLogs(logs []*dto.LogData) []dto.Session {
 				active[entry.NickName] = entry.TimeStamp
 				continue
 			}
-			if lastActivity := s.findLastUserActivityTimeStampBefore(logs, entry.NickName, &entry.TimeStamp); lastActivity != nil {
+			if lastActivity := s.findLastUserActivityTimeStampBefore(
+				logs,
+				entry.NickName,
+				&entry.TimeStamp,
+			); lastActivity != nil {
 				sessions = append(sessions, dto.Session{
 					NickName: entry.NickName,
 					Start:    active[entry.NickName],
