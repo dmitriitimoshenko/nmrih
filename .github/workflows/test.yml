@@ -37,7 +37,7 @@ jobs:
         run: make test-with-coverage
 
       - name: Post Coverage Insights
-        uses: dmitritimoshenko/go-coverage-insights@v1
+        uses: dmitritimoshenko/go-coverage-insights@v0.1.0
         with:
           cover_profile: ./log_api/cover.out
           github_token: ${{ secrets.GITHUB_TOKEN }}
