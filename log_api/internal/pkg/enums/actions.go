@@ -14,7 +14,7 @@ type Action string
 
 func (a Action) IsValid() bool {
 	switch a {
-	case connectedAction, disconnectedAction: //, enteredAction, committedSuicideAction:
+	case connectedAction, disconnectedAction: // , enteredAction, committedSuicideAction:
 		return true
 	default:
 		return false
