@@ -122,7 +122,6 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 			}
 
 			i := 0
-			log.Println("fileName: ", fileName)
 			scanner := bufio.NewScanner(bytes.NewReader(page))
 			for scanner.Scan() {
 				i++
@@ -139,6 +138,10 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 					s.addCountryIfIPAvailable(i, fileName, line, &logDataEntry, errChan)
 				}
 
+				if err := logDataEntry.Validate(); err != nil {
+					errChan <- fmt.Errorf("failed to validate log data entry: %w", err)
+					continue
+				}
 				logDataChan <- logDataEntry
 			}
 
@@ -162,6 +165,11 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				logDataChan = nil
 				continue
 			}
+
+			if err := data.Validate(); err != nil {
+				return nil, fmt.Errorf("[!!!] Failed to validate log data entry: %w", err)
+			}
+
 			logData = append(logData, data)
 		case err, opened := <-errChan:
 			if !opened {
@@ -204,9 +212,6 @@ func (s *Service) addActionNickAndTimeStamp(
 
 	timeStampStr := line[2:23]
 	parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
-
-	log.Printf("parsedTime: %v\n", parsedTime)
-
 	if err != nil {
 		errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
 		return
