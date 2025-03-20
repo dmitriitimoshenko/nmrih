@@ -87,7 +87,7 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 		log.Printf("[LogParseService] Last log time is %s\n", lastLogTime.Format(loggingTimeFormat))
 	}
 
-	if lastLogTime == nil {
+	if lastLogTime == nil || lastLogTime.IsZero() {
 		lastLogTime = &requestTimeStamp
 	}
 
