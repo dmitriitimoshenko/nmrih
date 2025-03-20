@@ -61,7 +61,9 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 
 	mappedLogs, err := s.mapLogs(logs, *dateFromPtr)
 	if err != nil {
-		return fmt.Errorf("failed to structurize the logs: %w", err)
+		err = fmt.Errorf("failed to structurize the logs: %w", err)
+		log.Println(err)
+		return err
 	}
 
 	log.Printf("[LogParseService] Mapped %d logs\n", len(mappedLogs))
@@ -174,15 +176,6 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 			errs = append(errs, err)
 		}
 	}
-
-	log.Println("[LogParseService] going to validate log data entries")
-	for _, logDataE := range logData {
-		if err := logDataE.Validate(); err != nil {
-			log.Println("[!!!] Failed to validate log data entry: ", err)
-			return nil, fmt.Errorf("[!!!] Failed to validate log data entry: %w", err)
-		}
-	}
-	log.Println("[LogParseService] validated all log data entries")
 
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
