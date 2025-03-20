@@ -46,7 +46,7 @@ func (s *Service) Parse(data []byte) ([]*dto.LogData, error) {
 
 		action := enums.Action(record[2])
 		if !action.IsValid() {
-			log.Printf("invalid action [%s], skipping: line No.%d\n", record[2], i+1)
+			// log.Printf("invalid action [%s], skipping: line No.%d\n", record[2], i+1)
 			continue
 		}
 
