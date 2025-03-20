@@ -182,6 +182,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 			return nil, fmt.Errorf("[!!!] Failed to validate log data entry: %w", err)
 		}
 	}
+	log.Println("[LogParseService] validated all log data entries")
 
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
