@@ -165,12 +165,6 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				logDataChan = nil
 				continue
 			}
-
-			if err := data.Validate(); err != nil {
-				log.Println("[!!!] Failed to validate log data entry: ", err)
-				return nil, fmt.Errorf("[!!!] Failed to validate log data entry: %w", err)
-			}
-
 			logData = append(logData, data)
 		case err, opened := <-errChan:
 			if !opened {
@@ -178,6 +172,13 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 				continue
 			}
 			errs = append(errs, err)
+		}
+	}
+
+	for _, logDataE := range logData {
+		if err := logDataE.Validate(); err != nil {
+			log.Println("[!!!] Failed to validate log data entry: ", err)
+			return nil, fmt.Errorf("[!!!] Failed to validate log data entry: %w", err)
 		}
 	}
 
