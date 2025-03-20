@@ -175,6 +175,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 		}
 	}
 
+	log.Println("[LogParseService] going to validate log data entries")
 	for _, logDataE := range logData {
 		if err := logDataE.Validate(); err != nil {
 			log.Println("[!!!] Failed to validate log data entry: ", err)
