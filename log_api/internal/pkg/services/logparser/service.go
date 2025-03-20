@@ -122,6 +122,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 			}
 
 			i := 0
+			log.Println("fileName: ", fileName)
 			scanner := bufio.NewScanner(bytes.NewReader(page))
 			for scanner.Scan() {
 				i++
@@ -203,6 +204,9 @@ func (s *Service) addActionNickAndTimeStamp(
 
 	timeStampStr := line[2:23]
 	parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
+
+	log.Printf("parsedTime: %v\n", parsedTime)
+
 	if err != nil {
 		errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
 		return
