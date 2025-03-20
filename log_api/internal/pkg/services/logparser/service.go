@@ -167,6 +167,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 			}
 
 			if err := data.Validate(); err != nil {
+				log.Println("[!!!] Failed to validate log data entry: ", err)
 				return nil, fmt.Errorf("[!!!] Failed to validate log data entry: %w", err)
 			}
 
