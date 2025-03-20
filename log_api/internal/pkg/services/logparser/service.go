@@ -15,7 +15,10 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/tools"
 )
 
-const maxConcurrentGoroutines = 100
+const (
+	maxConcurrentGoroutines = 100
+	loggingTimeFormat       = "2006-01-02 15:04:05"
+)
 
 type Service struct {
 	logRepository LogRepository
@@ -47,7 +50,7 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 		dateFromPtr = tools.ToPtr(time.Date(2025, time.March, 1, 0, 0, 0, 0, time.Local))
 	}
 
-	log.Printf("[LogParseService] Parsing logs from %s\n", dateFromPtr.Format("2006-01-02 15:04:05"))
+	log.Printf("[LogParseService] Parsing logs from %s\n", dateFromPtr.Format(loggingTimeFormat))
 
 	logs, err := s.logRepository.GetLogs()
 	if err != nil {
@@ -81,14 +84,14 @@ func (s *Service) Parse(requestTimeStamp time.Time) error {
 	if lastLogTime == nil {
 		log.Print("[LogParseService] Last log time is nil\n")
 	} else {
-		log.Printf("[LogParseService] Last log time is %s\n", lastLogTime.Format("2006-01-02 15:04:05"))
+		log.Printf("[LogParseService] Last log time is %s\n", lastLogTime.Format(loggingTimeFormat))
 	}
 
 	if lastLogTime == nil {
 		lastLogTime = &requestTimeStamp
 	}
 
-	log.Printf("[LogParseService] Last log time is ANYWAY %s\n", lastLogTime.Format("2006-01-02 15:04:05"))
+	log.Printf("[LogParseService] Last log time is ANYWAY %s\n", lastLogTime.Format(loggingTimeFormat))
 
 	if err := s.csvRepository.Save(csvBytes, *lastLogTime); err != nil {
 		return fmt.Errorf("failed to save mapped logs as CSV: %w", err)
@@ -190,14 +193,10 @@ func (s *Service) addActionNickAndTimeStamp(
 	errChan chan error,
 ) {
 	switch {
-	case strings.Contains(line, enums.Actions.Entered().String()):
-		logDataEntry.Action = enums.Actions.Entered()
 	case strings.Contains(line, enums.Actions.Disconnected().String()):
 		logDataEntry.Action = enums.Actions.Disconnected()
 	case strings.Contains(line, enums.Actions.Connected().String()):
 		logDataEntry.Action = enums.Actions.Connected()
-	case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
-		logDataEntry.Action = enums.Actions.CommittedSuicide()
 	default:
 		return
 	}
