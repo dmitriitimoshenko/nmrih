@@ -126,16 +126,27 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 			i := 0
 			scanner := bufio.NewScanner(bytes.NewReader(page))
 			for scanner.Scan() {
-				i++
 				line := scanner.Text()
+				if line == "" {
+					continue
+				}
 
+				i++
 				if linesCount <= i {
 					break
 				}
 
 				logDataEntry := dto.LogData{}
-				s.addActionNickAndTimeStamp(line, &logDataEntry, dateFrom, errChan)
 
+				switch {
+				case strings.Contains(line, enums.Actions.Disconnected().String()):
+					logDataEntry.Action = enums.Actions.Disconnected()
+				case strings.Contains(line, enums.Actions.Connected().String()):
+					logDataEntry.Action = enums.Actions.Connected()
+				default:
+					continue
+				}
+				s.addNickAndTimeStamp(line, &logDataEntry, dateFrom, errChan)
 				if logDataEntry.Action == enums.Actions.Connected() {
 					s.addCountryIfIPAvailable(i, fileName, line, &logDataEntry, errChan)
 				}
@@ -192,21 +203,12 @@ func (s *Service) countLines(data []byte) int {
 	return lineCount
 }
 
-func (s *Service) addActionNickAndTimeStamp(
+func (s *Service) addNickAndTimeStamp(
 	line string,
 	logDataEntry *dto.LogData,
 	dateFrom time.Time,
 	errChan chan error,
 ) {
-	switch {
-	case strings.Contains(line, enums.Actions.Disconnected().String()):
-		logDataEntry.Action = enums.Actions.Disconnected()
-	case strings.Contains(line, enums.Actions.Connected().String()):
-		logDataEntry.Action = enums.Actions.Connected()
-	default:
-		return
-	}
-
 	timeStampStr := line[2:23]
 	parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
 	if err != nil {
