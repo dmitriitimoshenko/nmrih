@@ -221,9 +221,7 @@ func (s *Service) addCountryIfIPAvailable(
 	logDataEntry *dto.LogData,
 	errChan chan error,
 ) {
-	log.Printf("Connected log entry: \"%s\"\n", line)
 	ipMatches := tools.IPRegex.FindAllString(line, -1)
-	log.Printf("IP matches (%d): %+v\n", len(ipMatches), ipMatches)
 	if len(ipMatches) > 1 {
 		log.Println(
 			"[WARN] Found more than one IP address in the line [",
