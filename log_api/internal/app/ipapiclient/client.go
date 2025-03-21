@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -31,7 +32,17 @@ func (c *IPAPIClient) GetCountryByIP(ip string) (*dto.IPInfo, error) {
 		return nil, fmt.Errorf("failed to get IP info: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		log.Printf(
+			"[IPClient][GetCountryByIP] Failed to get country for IP [%s] with response code [%s]\n",
+			ip, resp.Status,
+		)
+	}
+
 	var info *dto.IPInfo
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
+	if err = json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return nil, fmt.Errorf("failed to decode IP info: %w", err)
+	}
+	return info, nil
 }
