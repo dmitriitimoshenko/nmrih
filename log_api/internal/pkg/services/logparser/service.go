@@ -127,39 +127,11 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 			scanner := bufio.NewScanner(bytes.NewReader(page))
 			for scanner.Scan() {
 				line := scanner.Text()
-				if line == "" {
-					continue
-				}
-
 				i++
 				if linesCount <= i {
 					break
 				}
-
-				logDataEntry := dto.LogData{}
-
-				switch {
-				case strings.Contains(line, enums.Actions.Disconnected().String()):
-					logDataEntry.Action = enums.Actions.Disconnected()
-				case strings.Contains(line, enums.Actions.Connected().String()):
-					logDataEntry.Action = enums.Actions.Connected()
-				case strings.Contains(line, enums.Actions.Entered().String()):
-					logDataEntry.Action = enums.Actions.Entered()
-				case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
-					logDataEntry.Action = enums.Actions.CommittedSuicide()
-				default:
-					continue
-				}
-				s.addNickAndTimeStamp(line, &logDataEntry, dateFrom, errChan)
-				if logDataEntry.Action == enums.Actions.Connected() {
-					s.addCountryIfIPAvailable(i, fileName, line, &logDataEntry, errChan)
-				}
-
-				if err := logDataEntry.Validate(); err != nil {
-					errChan <- fmt.Errorf("failed to validate log data entry: %w", err)
-					continue
-				}
-				logDataChan <- logDataEntry
+				s.processLine(fileName, line, dateFrom, logDataChan, errChan)
 			}
 
 			if err := scanner.Err(); err != nil {
@@ -198,6 +170,42 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 	return logData, nil
 }
 
+func (s *Service) processLine(
+	fileName, line string,
+	dateFrom time.Time,
+	logDataChan chan dto.LogData,
+	errChan chan error,
+) {
+	if line == "" {
+		return
+	}
+
+	logDataEntry := dto.LogData{}
+
+	switch {
+	case strings.Contains(line, enums.Actions.Disconnected().String()):
+		logDataEntry.Action = enums.Actions.Disconnected()
+	case strings.Contains(line, enums.Actions.Connected().String()):
+		logDataEntry.Action = enums.Actions.Connected()
+	case strings.Contains(line, enums.Actions.Entered().String()):
+		logDataEntry.Action = enums.Actions.Entered()
+	case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
+		logDataEntry.Action = enums.Actions.CommittedSuicide()
+	default:
+		return
+	}
+	s.addNickAndTimeStamp(line, &logDataEntry, dateFrom, errChan)
+	if logDataEntry.Action == enums.Actions.Connected() {
+		s.addCountryIfIPAvailable(fileName, line, &logDataEntry, errChan)
+	}
+
+	if err := logDataEntry.Validate(); err != nil {
+		errChan <- fmt.Errorf("failed to validate log data entry: %w", err)
+		return
+	}
+	logDataChan <- logDataEntry
+}
+
 func (s *Service) countLines(data []byte) int {
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	lineCount := 0
@@ -228,7 +236,6 @@ func (s *Service) addNickAndTimeStamp(
 }
 
 func (s *Service) addCountryIfIPAvailable(
-	i int,
 	fileName, line string,
 	logDataEntry *dto.LogData,
 	errChan chan error,
@@ -236,18 +243,14 @@ func (s *Service) addCountryIfIPAvailable(
 	ipMatches := tools.IPRegex.FindAllString(line, -1)
 	if len(ipMatches) > 1 {
 		log.Println(
-			"[WARN] Found more than one IP address in the line [",
-			i,
-			"] of the file [",
+			"[WARN] Found more than one IP address in file [",
 			fileName,
 			"]",
 		)
 	}
 	if len(ipMatches) == 0 {
 		log.Println(
-			"[WARN] Found no IP address in the line [",
-			i,
-			"] of the file [",
+			"[WARN] Found no IP address in file [",
 			fileName,
 			"]",
 		)
