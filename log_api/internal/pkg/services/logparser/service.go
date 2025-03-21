@@ -143,6 +143,10 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 					logDataEntry.Action = enums.Actions.Disconnected()
 				case strings.Contains(line, enums.Actions.Connected().String()):
 					logDataEntry.Action = enums.Actions.Connected()
+				case strings.Contains(line, enums.Actions.Entered().String()):
+					logDataEntry.Action = enums.Actions.Entered()
+				case strings.Contains(line, enums.Actions.CommittedSuicide().String()):
+					logDataEntry.Action = enums.Actions.CommittedSuicide()
 				default:
 					continue
 				}
