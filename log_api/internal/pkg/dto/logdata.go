@@ -2,6 +2,7 @@ package dto
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
@@ -17,6 +18,7 @@ type LogData struct {
 
 func (l *LogData) Validate() error {
 	if l.TimeStamp.IsZero() {
+		log.Println("invalid timestamp: ", l.TimeStamp)
 		return errors.New("invalid timestamp")
 	}
 	if l.NickName == "" {
