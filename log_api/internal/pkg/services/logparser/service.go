@@ -115,7 +115,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 
 	for fileName, page := range logs {
 		wg.Add(1)
-		go func(fileName string, page []byte) {
+		go func(fileName string, page []byte, dateFrom time.Time, errChan chan error, logDataChan chan dto.LogData) {
 			defer wg.Done()
 
 			linesCount := s.countLines(page)
@@ -137,7 +137,7 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 			if err := scanner.Err(); err != nil {
 				errChan <- fmt.Errorf("error reading log extracted from file \"%s\": %w", fileName, err)
 			}
-		}(fileName, page)
+		}(fileName, page, dateFrom, errChan, logDataChan)
 	}
 
 	go func() {
