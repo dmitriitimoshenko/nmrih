@@ -200,7 +200,7 @@ func (s *Service) processLine(
 	}
 
 	if err := logDataEntry.Validate(); err != nil {
-		errChan <- fmt.Errorf("failed to validate log data entry: %w", err)
+		errChan <- fmt.Errorf("failed to validate log data entry on line [%s]: %w", line, err)
 		return
 	}
 	logDataChan <- logDataEntry
