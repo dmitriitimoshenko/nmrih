@@ -140,11 +140,11 @@ func (s *Service) mapLogs(logs map[string][]byte, dateFrom time.Time) ([]dto.Log
 		}(fileName, page, dateFrom, errChan, logDataChan)
 	}
 
-	go func() {
+	go func(errChan chan error, logDataChan chan dto.LogData) {
 		wg.Wait()
 		close(logDataChan)
 		close(errChan)
-	}()
+	}(errChan, logDataChan)
 
 	var errs []error
 	for logDataChan != nil || errChan != nil {
