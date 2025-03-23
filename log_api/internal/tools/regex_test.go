@@ -32,6 +32,9 @@ func TestDateTimeRegex(t *testing.T) {
 	assert.True(t, tools.DateTimeRegex.MatchString(
 		`L 03/23/2025 - 08:05:10: "XXXXX<101><[U:1:xxxxxxxxxx]><>" committed suicide with "world"`,
 	))
+	assert.True(t, tools.DateTimeRegex.MatchString(
+		`L 03/15/2025 - 16:05:12: "BigZeeb<69><[U:1:xxxxxxxxxx]><>" connected, address "123.190.1.1:27005"`,
+	))
 	assert.False(t, tools.DateTimeRegex.MatchString(
 		`L 03/23/2X25 - 08:05:10: "XXXXX<101><[U:1:xxxxxxxxxx]><>" committed suicide with "world"`,
 	))
