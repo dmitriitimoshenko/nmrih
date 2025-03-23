@@ -194,7 +194,9 @@ func (s *Service) processLine(
 	default:
 		return
 	}
-	s.addNickAndTimeStamp(fileName, line, &logDataEntry, dateFrom, errChan)
+	if ok := s.addNickAndTimeStamp(fileName, line, &logDataEntry, dateFrom, errChan); !ok {
+		return
+	}
 	if logDataEntry.Action == enums.Actions.Connected() {
 		s.addCountryIfIPAvailable(fileName, line, &logDataEntry, errChan)
 	}
@@ -220,26 +222,34 @@ func (s *Service) addNickAndTimeStamp(
 	logDataEntry *dto.LogData,
 	dateFrom time.Time,
 	errChan chan error,
-) {
+) bool {
 	timeStampMatches := tools.DateTimeRegex.FindStringSubmatch(line)
 	if len(timeStampMatches) < 2 {
 		log.Println("[WARN] Found no TimeStamp in file [", fileName, "]")
 		errChan <- fmt.Errorf("failed to extract timeStamp from log line [%s]", line)
-		return
+		return false
 	}
-	timeStampStr := timeStampMatches[1]
+	timeStampStr := timeStampMatches[1] // e.g. "03/15/2025 - 15:14:03"
 
 	parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
 	if err != nil {
 		errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
-		return
+		return false
 	}
+
 	if !parsedTime.After(dateFrom) {
-		return
+		return false
 	}
 
 	logDataEntry.TimeStamp = parsedTime
-	logDataEntry.NickName = line[26:strings.Index(line, "<")]
+
+	nickEnd := strings.Index(line, "<")
+	if nickEnd > 26 {
+		logDataEntry.NickName = line[26:nickEnd]
+	} else {
+		logDataEntry.NickName = ""
+	}
+	return true
 }
 
 func (s *Service) addCountryIfIPAvailable(
