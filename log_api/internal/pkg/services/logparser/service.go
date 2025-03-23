@@ -221,24 +221,14 @@ func (s *Service) addNickAndTimeStamp(
 	dateFrom time.Time,
 	errChan chan error,
 ) {
-	var timeStampStr string
-	timeStampMatches := tools.DateTimeRegex.FindAllString(line, -1)
-	if len(timeStampMatches) == 0 {
-		log.Println(
-			"[WARN] Found no TimeStamp in file [",
-			fileName,
-			"]",
-		)
+	timeStampMatches := tools.DateTimeRegex.FindStringSubmatch(line)
+	if len(timeStampMatches) < 2 {
+		log.Println("[WARN] Found no TimeStamp in file [", fileName, "]")
 		errChan <- fmt.Errorf("failed to extract timeStamp from log line [%s]", line)
 		return
-	} else if len(timeStampMatches) > 1 {
-		log.Println(
-			"[WARN] Found more than one TimeStamp in file [",
-			fileName,
-			"]",
-		)
 	}
-	timeStampStr = timeStampMatches[0]
+	timeStampStr := timeStampMatches[1]
+
 	parsedTime, err := time.Parse("01/02/2006 - 15:04:05", timeStampStr)
 	if err != nil {
 		errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
