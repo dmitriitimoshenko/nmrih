@@ -17,6 +17,7 @@ import (
 
 const (
 	maxConcurrentGoroutines = 100
+	minNickEnd              = 26
 	loggingTimeFormat       = "2006-01-02 15:04:05"
 )
 
@@ -194,6 +195,7 @@ func (s *Service) processLine(
 	default:
 		return
 	}
+
 	if ok := s.addNickAndTimeStamp(fileName, line, &logDataEntry, dateFrom, errChan); !ok {
 		return
 	}
@@ -224,7 +226,7 @@ func (s *Service) addNickAndTimeStamp(
 	errChan chan error,
 ) bool {
 	timeStampMatches := tools.DateTimeRegex.FindStringSubmatch(line)
-	if len(timeStampMatches) < 2 {
+	if len(timeStampMatches) <= 1 {
 		log.Println("[WARN] Found no TimeStamp in file [", fileName, "]")
 		errChan <- fmt.Errorf("failed to extract timeStamp from log line [%s]", line)
 		return false
@@ -236,7 +238,6 @@ func (s *Service) addNickAndTimeStamp(
 		errChan <- fmt.Errorf("failed to parse timeStamp from extracted log: %w", err)
 		return false
 	}
-
 	if !parsedTime.After(dateFrom) {
 		return false
 	}
@@ -244,8 +245,8 @@ func (s *Service) addNickAndTimeStamp(
 	logDataEntry.TimeStamp = parsedTime
 
 	nickEnd := strings.Index(line, "<")
-	if nickEnd > 26 {
-		logDataEntry.NickName = line[26:nickEnd]
+	if nickEnd > minNickEnd {
+		logDataEntry.NickName = line[minNickEnd:nickEnd]
 	} else {
 		logDataEntry.NickName = ""
 	}
