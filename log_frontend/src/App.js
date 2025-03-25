@@ -80,7 +80,7 @@ function App() {
           )}
           <tr>
             <td colSpan="2">
-              <h3>Online Statistics</h3>
+              <h3>Online Statistics (CET)</h3>
               <div className="graph-container">
                 <OnlineStatisticsChart />
               </div>
