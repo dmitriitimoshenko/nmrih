@@ -8,10 +8,10 @@ import (
 )
 
 type Service struct {
-	config Config
+	config config
 }
 
-func NewService(config Config) *Service {
+func NewService(config config) *Service {
 	return &Service{config: config}
 }
 

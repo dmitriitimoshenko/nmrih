@@ -4,15 +4,15 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 )
 
-type CSVRepository interface {
+type csvRepository interface {
 	GetAllCSVData() ([]byte, error)
 }
 
-type CSVParser interface {
+type csvParser interface {
 	Parse(data []byte) ([]*dto.LogData, error)
 }
 
-type GraphService interface {
+type graphService interface {
 	TopTimeSpent(logs []*dto.LogData) dto.TopTimeSpentList
 	TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageList
 	PlayersInfo() (*dto.PlayersInfo, error)

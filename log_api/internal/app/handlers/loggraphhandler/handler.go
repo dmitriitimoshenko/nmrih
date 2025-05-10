@@ -8,15 +8,15 @@ import (
 )
 
 type Handler struct {
-	csvRepository CSVRepository
-	csvParser     CSVParser
-	graphService  GraphService
+	csvRepository csvRepository
+	csvParser     csvParser
+	graphService  graphService
 }
 
 func NewLogGraphHandler(
-	csvRepository CSVRepository,
-	csvParser CSVParser,
-	graphService GraphService,
+	csvRepository csvRepository,
+	csvParser csvParser,
+	graphService graphService,
 ) *Handler {
 	return &Handler{
 		csvRepository: csvRepository,

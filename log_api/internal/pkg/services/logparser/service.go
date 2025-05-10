@@ -22,17 +22,17 @@ const (
 )
 
 type Service struct {
-	logRepository LogRepository
-	csvGenerator  CSVGenerator
-	csvRepository CSVRepository
-	ipAPIClient   IPAPIClient
+	logRepository logRepository
+	csvGenerator  csvGenerator
+	csvRepository csvRepository
+	ipAPIClient   ipAPIClient
 }
 
 func NewService(
-	logRepository LogRepository,
-	csvGenerator CSVGenerator,
-	csvRepository CSVRepository,
-	ipAPIClient IPAPIClient,
+	logRepository logRepository,
+	csvGenerator csvGenerator,
+	csvRepository csvRepository,
+	ipAPIClient ipAPIClient,
 ) *Service {
 	return &Service{
 		logRepository: logRepository,

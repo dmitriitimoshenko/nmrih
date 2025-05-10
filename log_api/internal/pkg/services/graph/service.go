@@ -21,10 +21,10 @@ const (
 )
 
 type Service struct {
-	a2sClient A2SClient
+	a2sClient a2sClient
 }
 
-func NewService(a2sClient A2SClient) *Service {
+func NewService(a2sClient a2sClient) *Service {
 	return &Service{a2sClient: a2sClient}
 }
 

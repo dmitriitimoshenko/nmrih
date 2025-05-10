@@ -2,6 +2,6 @@ package logparserhandler
 
 import "time"
 
-type Service interface {
+type service interface {
 	Parse(requestTimeStamp time.Time) error
 }

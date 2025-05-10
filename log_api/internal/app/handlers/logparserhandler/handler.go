@@ -8,10 +8,10 @@ import (
 )
 
 type Handler struct {
-	service Service
+	service service
 }
 
-func NewLogParserHandler(service Service) *Handler {
+func NewLogParserHandler(service service) *Handler {
 	return &Handler{
 		service: service,
 	}

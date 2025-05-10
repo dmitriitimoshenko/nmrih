@@ -6,19 +6,19 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 )
 
-type LogRepository interface {
+type logRepository interface {
 	GetLogs() (map[string][]byte, error)
 }
 
-type CSVGenerator interface {
+type csvGenerator interface {
 	Generate(logData []dto.LogData) ([]byte, *time.Time, error)
 }
 
-type CSVRepository interface {
+type csvRepository interface {
 	Save(data []byte, requestTimeStamp time.Time) error
 	GetLastSavedDate() (*time.Time, error)
 }
 
-type IPAPIClient interface {
+type ipAPIClient interface {
 	GetCountryByIP(ip string) (*dto.IPInfo, error)
 }

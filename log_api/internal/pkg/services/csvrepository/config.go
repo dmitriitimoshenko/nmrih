@@ -1,11 +1,11 @@
 package csvrepository
 
-type Config struct {
+type config struct {
 	CsvStorageDirectory string
 }
 
-func NewConfig(csvStorageDirectory string) *Config {
-	return &Config{
+func NewConfig(csvStorageDirectory string) *config {
+	return &config{
 		CsvStorageDirectory: csvStorageDirectory,
 	}
 }

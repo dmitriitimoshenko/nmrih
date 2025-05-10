@@ -1,6 +1,6 @@
 package logrepository
 
-type Config struct {
+type config struct {
 	LogDirectory    string
 	LogFilesPattern string
 }
@@ -8,8 +8,8 @@ type Config struct {
 func NewConfig(
 	logDirectory string,
 	logFilesPattern string,
-) *Config {
-	return &Config{
+) *config {
+	return &config{
 		LogDirectory:    logDirectory,
 		LogFilesPattern: logFilesPattern,
 	}
