@@ -20,7 +20,6 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/logrepository"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -38,11 +37,6 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	server := gin.Default()
 	server.Use(gin.Logger())
 	server.Use(gin.Recovery())

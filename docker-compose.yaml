@@ -45,6 +45,15 @@ services:
       - ./logs:/logs
     ports:
       - "8090"
+    environment:
+      - ENV=prod
+      - GIN_MODE=release
+      - PORT=8090
+      - SERVER_ADDR=rulat-bot.duckdns.org
+      - SERVER_PORT=27015
+      - CSV_STORAGE_DIRECTORY="/data"
+      - LOGS_STORAGE_DIRECTORY="/logs/"
+      - LOGS_FILE_PATTERN="l*.log"
     networks:
       - traefik-net
     labels:
