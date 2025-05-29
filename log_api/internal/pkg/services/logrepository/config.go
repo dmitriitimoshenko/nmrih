@@ -5,6 +5,7 @@ type config struct {
 	LogFilesPattern string
 }
 
+//nolint:revive // no sense in export here
 func NewConfig(
 	logDirectory string,
 	logFilesPattern string,
