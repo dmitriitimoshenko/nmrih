@@ -7,13 +7,13 @@ entryPoints:
 certificatesResolvers:
   myresolver:
     acme:
-      email: "dmitrii.timoshenko16@gmail.com"
-      storage: "/etc/traefik/acme/acme.json"
+      email: "${TRAEFIK_ACME_EMAIL}"
+      storage: "${TRAEFIK_ACME_STORAGE}"
       httpChallenge:
         entryPoint: "web"
 
 log:
-  level: DEBUG
+  level: WARN
   filePath: "/var/log/traefik/traefik.log"
 
 providers:

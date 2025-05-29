@@ -10,7 +10,7 @@ services:
       container_name: nmrih_traefik
       restart: on-failure
       command:
-        - "--log.level=DEBUG"
+        - "--log.level=WARN"
         - "--api.dashboard=false"
         - "--api.insecure=false"
         - "--entryPoints.http.address=:80"
@@ -18,8 +18,9 @@ services:
         - "--providers.docker=true"
         - "--providers.docker.exposedbydefault=false"
         - "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=http"
-        - "--certificatesResolvers.myresolver.acme.email=meistersservice@gmail.com"
-        - "--certificatesResolvers.myresolver.acme.storage=/etc/traefik/acme/acme.json"
+      environment:
+        - TRAEFIK_ACME_EMAIL=${TRAEFIK_ACME_EMAIL}
+        - TRAEFIK_ACME_STORAGE=${TRAEFIK_ACME_STORAGE}
       ports:
         - "80:80"
         - "443:443"
@@ -76,7 +77,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.log_frontend-secure.tls=true"
-      # HTTPS
       - "traefik.http.routers.log_frontend-secure.rule=Host(`rulat-bot.duckdns.org`)"
       - "traefik.http.routers.log_frontend-secure.entryPoints=https"
       - "traefik.http.routers.log_frontend-secure.tls.certresolver=myresolver"
