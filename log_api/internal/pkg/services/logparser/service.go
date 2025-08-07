@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -219,6 +220,8 @@ func (s *Service) countLines(data []byte) int {
 	return lineCount
 }
 
+var nickRegex = regexp.MustCompile(`L \d{2}/\d{2}/\d{4} - \d{2}:\d{2}:\d{2}: "([^"<]*)`)
+
 func (s *Service) addNickAndTimeStamp(
 	fileName, line string,
 	logDataEntry *dto.LogData,
@@ -244,11 +247,16 @@ func (s *Service) addNickAndTimeStamp(
 
 	logDataEntry.TimeStamp = parsedTime
 
-	nickEnd := strings.Index(line, "<")
-	if nickEnd > minNickEnd {
-		logDataEntry.NickName = line[minNickEnd:nickEnd]
+	// Используем regex для извлечения ника
+	nickMatches := nickRegex.FindStringSubmatch(line)
+	if len(nickMatches) == 1 {
+		logDataEntry.NickName = nickMatches[0]
 	} else {
-		logDataEntry.NickName = ""
+		logDataEntry.NickName = "UNIDENTIFIED_NICKNAME_" + fileName
+		errChan <- fmt.Errorf(
+			"failed to get nickname from line [%s] of file [%s]: %w",
+			line, fileName, err,
+		)
 	}
 	return true
 }
