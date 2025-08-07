@@ -249,15 +249,14 @@ func (s *Service) addNickAndTimeStamp(
 	nickMatches := regexp.
 		MustCompile(`:\s*"(.*?)(?:<\d+|<\[|<>|")`).
 		FindStringSubmatch(line)
-	if len(nickMatches) == 1 {
-		logDataEntry.NickName = nickMatches[0]
-	} else {
-		logDataEntry.NickName = "UNIDENTIFIED_NICKNAME_" + fileName
+	if len(nickMatches) < 1 {
 		errChan <- fmt.Errorf(
 			"failed to get nickname from line [%s] of file [%s]: %+v",
 			line, fileName, nickMatches,
 		)
+		return false
 	}
+	logDataEntry.NickName = nickMatches[len(nickMatches)-1]
 	return true
 }
 
