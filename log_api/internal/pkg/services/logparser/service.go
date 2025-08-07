@@ -254,8 +254,8 @@ func (s *Service) addNickAndTimeStamp(
 	} else {
 		logDataEntry.NickName = "UNIDENTIFIED_NICKNAME_" + fileName
 		errChan <- fmt.Errorf(
-			"failed to get nickname from line [%s] of file [%s]: %w",
-			line, fileName, err,
+			"failed to get nickname from line [%s] of file [%s]: %+v",
+			line, fileName, nickMatches,
 		)
 	}
 	return true
