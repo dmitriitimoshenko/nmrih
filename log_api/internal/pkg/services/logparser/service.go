@@ -220,8 +220,6 @@ func (s *Service) countLines(data []byte) int {
 	return lineCount
 }
 
-var nickRegex = regexp.MustCompile(`L \d{2}/\d{2}/\d{4} - \d{2}:\d{2}:\d{2}: "([^"<]*)`)
-
 func (s *Service) addNickAndTimeStamp(
 	fileName, line string,
 	logDataEntry *dto.LogData,
@@ -248,7 +246,9 @@ func (s *Service) addNickAndTimeStamp(
 	logDataEntry.TimeStamp = parsedTime
 
 	// Используем regex для извлечения ника
-	nickMatches := nickRegex.FindStringSubmatch(line)
+	nickMatches := regexp.
+		MustCompile(`:\s*"(.*?)(?:<\d+|<\[|<>|")`).
+		FindStringSubmatch(line)
 	if len(nickMatches) == 1 {
 		logDataEntry.NickName = nickMatches[0]
 	} else {
