@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient"
 	a2sclientconfig "github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient/config"
@@ -20,6 +21,8 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/logparser"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/logrepository"
 
+	"github.com/gin-contrib/cache"
+	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
 )
 
@@ -87,8 +90,10 @@ func main() {
 		})
 	})
 
+	cacheStore := persistence.NewInMemoryStore(time.Minute)
+
 	apiv1 := server.Group("/api/v1")
-	apiv1.GET("/parse", logParserHandler.Parse)
+	apiv1.GET("/parse", cache.CachePage(cacheStore, time.Minute, logParserHandler.Parse))
 	apiv1.GET("/graph", logGraphHandler.Graph)
 
 	ports := fmt.Sprintf(":%s", os.Getenv("PORT"))
