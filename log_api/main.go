@@ -10,6 +10,7 @@ import (
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient"
 	a2sclientconfig "github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient/config"
+	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/cache"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/handlers/loggraphhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/handlers/logparserhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/ipapiclient"
@@ -21,10 +22,10 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/logparser"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/logrepository"
 
-	"github.com/gin-contrib/cache"
-	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
 )
+
+const defaultRedisTTL = 5 * time.Minute
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -49,6 +50,8 @@ func main() {
 	ginMode := os.Getenv("GIN_MODE")
 	log.Println("GIN Mode set to: ", ginMode)
 	gin.SetMode(ginMode)
+
+	redisCache := cache.NewRedisClient(os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), 0, defaultRedisTTL)
 
 	serverPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
 	if err != nil {
@@ -82,7 +85,12 @@ func main() {
 	)
 
 	logParserHandler := logparserhandler.NewLogParserHandler(logParserService)
-	logGraphHandler := loggraphhandler.NewLogGraphHandler(csvRepositoryService, csvParserService, graphService)
+	logGraphHandler := loggraphhandler.NewLogGraphHandler(
+		redisCache,
+		csvRepositoryService,
+		csvParserService,
+		graphService,
+	)
 
 	server.GET("/health-check", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -90,10 +98,8 @@ func main() {
 		})
 	})
 
-	cacheStore := persistence.NewInMemoryStore(time.Minute)
-
 	apiv1 := server.Group("/api/v1")
-	apiv1.GET("/parse", cache.CachePage(cacheStore, time.Minute, logParserHandler.Parse))
+	apiv1.GET("/parse", logParserHandler.Parse)
 	apiv1.GET("/graph", logGraphHandler.Graph)
 
 	ports := fmt.Sprintf(":%s", os.Getenv("PORT"))

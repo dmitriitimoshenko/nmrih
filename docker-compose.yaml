@@ -30,6 +30,21 @@ services:
       networks:
         - traefik-net
 
+  redis:
+    image: redis:8.2.0-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   log_api:
     container_name: nmrih_log_api
     image: "nmrih_log_api:latest"
@@ -41,6 +56,9 @@ services:
       timeout: 3s
       retries: 3
       start_period: 3s
+    depends_on:
+      redis:
+        condition: service_healthy
     volumes:
       - shared_data:/data
       - ./logs:/logs
@@ -56,6 +74,9 @@ services:
       - LOGS_STORAGE_DIRECTORY=/logs/
       - LOGS_FILE_PATTERN=l*.log
       - IP_INFO_API_TOKEN=${IP_INFO_API_TOKEN}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_ADDR=redis:6379
+      - LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES=5
     networks:
       - traefik-net
     labels:
@@ -84,6 +105,7 @@ services:
 
 volumes:
   shared_data:
+  redis-data:
 
 networks:
   traefik-net:
