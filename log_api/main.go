@@ -11,6 +11,7 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient"
 	a2sclientconfig "github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient/config"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/cache"
+	redisclientconfig "github.com/dmitriitimoshenko/nmrih/log_api/internal/app/cache/config"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/handlers/loggraphhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/handlers/logparserhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/ipapiclient"
@@ -51,7 +52,13 @@ func main() {
 	log.Println("GIN Mode set to: ", ginMode)
 	gin.SetMode(ginMode)
 
-	redisCache := cache.NewRedisClient(os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), 0, defaultRedisTTL)
+	redisConfig := &redisclientconfig.RedisConfig{
+		Addr:       os.Getenv("REDIS_ADDR"),
+		Password:   os.Getenv("REDIS_PASSWORD"),
+		DB:         0,
+		DefaultTTL: defaultRedisTTL,
+	}
+	redisClient := cache.NewRedisClient(redisConfig)
 
 	serverPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
 	if err != nil {
@@ -85,11 +92,11 @@ func main() {
 	)
 
 	logParserHandler := logparserhandler.NewLogParserHandler(
-		redisCache,
+		redisClient,
 		logParserService,
 	)
 	logGraphHandler := loggraphhandler.NewLogGraphHandler(
-		redisCache,
+		redisClient,
 		csvRepositoryService,
 		csvParserService,
 		graphService,

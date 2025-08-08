@@ -117,18 +117,7 @@ func (h *Handler) getCacheIfApplicable(ctx context.Context, graphType enums.Grap
 		return nil, nil
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, h.cacheTimeout)
-	defer cancel()
-	cached, ok, err := h.redisCache.Get(timeoutCtx, "graph_data:"+graphType.String())
-	if err != nil {
-		fmt.Println("Error getting from cache:", err)
-		return nil, err
-	}
-	if ok && cached != "" {
-		return &cached, nil
-	}
-
-	return nil, nil
+	return h.redisCache.GetWithTimeout(ctx, "graph_data:"+graphType.String(), h.cacheTimeout)
 }
 
 func (h *Handler) saveCacheIfApplicable(ctx context.Context, graphType enums.GraphType, response gin.H) error {
@@ -141,13 +130,12 @@ func (h *Handler) saveCacheIfApplicable(ctx context.Context, graphType enums.Gra
 		return fmt.Errorf("failed to marshal response: %w", err)
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, h.cacheTimeout)
-	defer cancel()
-	if err := h.redisCache.Set(
-		timeoutCtx,
+	if err := h.redisCache.SetWithTimeout(
+		ctx,
 		"graph_data:"+graphType.String(),
 		string(responseJSONBytes),
 		&h.defaultTTL,
+		h.cacheTimeout,
 	); err != nil {
 		return fmt.Errorf("failed to save cached graph data: %w", err)
 	}

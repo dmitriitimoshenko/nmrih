@@ -8,8 +8,8 @@ import (
 )
 
 type redisCache interface {
-	Get(ctx context.Context, key string) (string, bool, error)
-	Set(ctx context.Context, key, value string, ttlOverride *time.Duration) error
+	GetWithTimeout(ctx context.Context, key string, cacheTimeout time.Duration) (*string, error)
+	SetWithTimeout(ctx context.Context, key, value string, ttlOverride *time.Duration, cacheTimeout time.Duration) error
 }
 
 type csvRepository interface {
