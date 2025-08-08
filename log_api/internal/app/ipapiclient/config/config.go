@@ -1,11 +1,11 @@
 package config
 
 type IPAPIClientConfig struct {
-	IpInfoAPIToken string
+	IPInfoAPIToken string
 }
 
-func NewIPAPIClientConfig(ipInfoAPIToken string) *IPAPIClientConfig {
+func NewIPAPIClientConfig(IPInfoAPIToken string) *IPAPIClientConfig {
 	return &IPAPIClientConfig{
-		IpInfoAPIToken: ipInfoAPIToken,
+		IPInfoAPIToken: IPInfoAPIToken,
 	}
 }
