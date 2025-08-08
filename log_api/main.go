@@ -84,7 +84,10 @@ func main() {
 		ipAPIClient,
 	)
 
-	logParserHandler := logparserhandler.NewLogParserHandler(logParserService)
+	logParserHandler := logparserhandler.NewLogParserHandler(
+		redisCache,
+		logParserService,
+	)
 	logGraphHandler := loggraphhandler.NewLogGraphHandler(
 		redisCache,
 		csvRepositoryService,

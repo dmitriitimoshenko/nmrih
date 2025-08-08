@@ -8,12 +8,17 @@ import (
 )
 
 type Handler struct {
-	service service
+	redisCache redisCache
+	service    service
 }
 
-func NewLogParserHandler(service service) *Handler {
+func NewLogParserHandler(
+	redisCache redisCache,
+	service service,
+) *Handler {
 	return &Handler{
-		service: service,
+		redisCache: redisCache,
+		service:    service,
 	}
 }
 
@@ -27,6 +32,12 @@ func (h *Handler) Parse(ctx *gin.Context) {
 	requestTimeStamp := time.Now()
 
 	if err := h.service.Parse(requestTimeStamp); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.Abort()
+		return
+	}
+
+	if err := h.redisCache.FlushAll(ctx); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		ctx.Abort()
 		return

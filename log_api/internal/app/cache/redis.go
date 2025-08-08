@@ -22,10 +22,6 @@ func NewRedisClient(addr, password string, db int, defaultTTL time.Duration) *Re
 	return &Redis{client: rdb, ttl: defaultTTL}
 }
 
-func (r *Redis) Ping(ctx context.Context) error {
-	return r.client.Ping(ctx).Err()
-}
-
 func (r *Redis) Get(ctx context.Context, key string) (string, bool, error) {
 	val, err := r.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
@@ -41,6 +37,6 @@ func (r *Redis) Set(ctx context.Context, key, value string, ttlOverride *time.Du
 	return r.client.Set(ctx, key, value, r.ttl).Err()
 }
 
-func (r *Redis) Delete(ctx context.Context, key string) error {
-	return r.client.Del(ctx, key).Err()
+func (r *Redis) FlushAll(ctx context.Context) error {
+	return r.client.FlushAll(ctx).Err()
 }
