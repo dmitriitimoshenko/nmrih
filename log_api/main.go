@@ -50,6 +50,7 @@ func main() {
 	gin.SetMode(ginMode)
 
 	redisCache := cache.NewRedisClient("redis:6379", "", 0, 5*time.Minute)
+	logGraphHandlerCacheTTL := time.Duration(5 * time.Minute)
 
 	serverPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
 	if err != nil {
@@ -88,6 +89,7 @@ func main() {
 		csvRepositoryService,
 		csvParserService,
 		graphService,
+		&logGraphHandlerCacheTTL,
 	)
 
 	server.GET("/health-check", func(c *gin.Context) {

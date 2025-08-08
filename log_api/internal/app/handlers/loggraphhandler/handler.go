@@ -15,6 +15,7 @@ type Handler struct {
 	csvRepository csvRepository
 	csvParser     csvParser
 	graphService  graphService
+	defaultTTL    *time.Duration
 }
 
 func NewLogGraphHandler(
@@ -22,12 +23,14 @@ func NewLogGraphHandler(
 	csvRepository csvRepository,
 	csvParser csvParser,
 	graphService graphService,
+	defaultTTL *time.Duration,
 ) *Handler {
 	return &Handler{
 		redisCache:    redisCache,
 		csvRepository: csvRepository,
 		csvParser:     csvParser,
 		graphService:  graphService,
+		defaultTTL:    defaultTTL,
 	}
 }
 
@@ -116,7 +119,7 @@ func (h *Handler) Graph(ctx *gin.Context) {
 
 	timeoutCtx, cancel = context.WithTimeout(ctx.Request.Context(), time.Second)
 	defer cancel()
-	if err := h.redisCache.Set(timeoutCtx, redisCacheKey, string(responseJSONBytes), nil); err != nil {
+	if err := h.redisCache.Set(timeoutCtx, redisCacheKey, string(responseJSONBytes), h.defaultTTL); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to cache graph data"})
 		ctx.Abort()
 		return
