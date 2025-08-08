@@ -55,5 +55,5 @@ func (c *IPAPIClient) GetCountryByIP(ip string) (*dto.IPInfo, error) {
 }
 
 func (c *IPAPIClient) getURL(ip string) string {
-	return fmt.Sprintf("https://api.ipinfo.io/%s?token=%s", ip, c.config.IpInfoAPIToken)
+	return fmt.Sprintf("https://api.ipinfo.io/lite/%s?token=%s", ip, c.config.IpInfoAPIToken)
 }
