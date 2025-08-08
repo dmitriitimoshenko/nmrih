@@ -27,6 +27,7 @@ func NewLogParserHandler(
  *   1. get data from *.log files in "../logs/" directory
  *   2. parse into array of LogData type
  *   3. convert into csv files and save them in "../data/" files
+ *   4. flush redis cache
  */
 func (h *Handler) Parse(ctx *gin.Context) {
 	requestTimeStamp := time.Now()

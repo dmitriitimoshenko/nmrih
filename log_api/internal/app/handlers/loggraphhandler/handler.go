@@ -112,7 +112,6 @@ func (h *Handler) Graph(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-//nolint:mnd // hardcoded timeout is expected
 func (h *Handler) getCacheIfApplicable(ctx context.Context, graphType enums.GraphType) (*string, error) {
 	if !graphType.CanCache() {
 		return nil, nil
@@ -132,7 +131,6 @@ func (h *Handler) getCacheIfApplicable(ctx context.Context, graphType enums.Grap
 	return nil, nil
 }
 
-//nolint:mnd // hardcoded timeout is expected
 func (h *Handler) saveCacheIfApplicable(ctx context.Context, graphType enums.GraphType, response gin.H) error {
 	if !graphType.CanCache() {
 		return nil
