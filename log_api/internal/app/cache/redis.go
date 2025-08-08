@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -27,7 +28,7 @@ func (r *Redis) Ping(ctx context.Context) error {
 
 func (r *Redis) Get(ctx context.Context, key string) (string, bool, error) {
 	val, err := r.client.Get(ctx, key).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return "", false, nil
 	}
 	return val, err == nil, err

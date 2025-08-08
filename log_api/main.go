@@ -25,6 +25,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const defaultRedisTTL = 5 * time.Minute
+
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "https://rulat-bot.duckdns.org")
@@ -49,7 +51,7 @@ func main() {
 	log.Println("GIN Mode set to: ", ginMode)
 	gin.SetMode(ginMode)
 
-	redisCache := cache.NewRedisClient(os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), 0, 5*time.Minute)
+	redisCache := cache.NewRedisClient(os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), 0, defaultRedisTTL)
 
 	serverPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
 	if err != nil {

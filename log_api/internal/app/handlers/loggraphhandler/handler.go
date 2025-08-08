@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
 	"github.com/gin-gonic/gin"
 )
@@ -83,40 +84,11 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	var response gin.H
-
-	switch graphType {
-	case enums.GraphTypes.TopTimeSpentGraphType():
-		{
-			response = gin.H{"data": h.graphService.TopTimeSpent(logs)}
-			break
-		}
-	case enums.GraphTypes.TopCountriesGraphType():
-		{
-			response = gin.H{"data": h.graphService.TopCountries(logs)}
-			break
-		}
-	case enums.GraphTypes.PlayersInfoGraphType():
-		{
-			result, err := h.graphService.PlayersInfo()
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				ctx.Abort()
-				return
-			}
-			response = gin.H{"data": result}
-			break
-		}
-	case enums.GraphTypes.OnlineStatisticsGraphType():
-		{
-			response = gin.H{"data": h.graphService.OnlineStatistics(logs)}
-			break
-		}
-	default:
-		{
-			ctx.JSON(http.StatusOK, gin.H{"data": "none"})
-			return
-		}
+	response, ok := h.getResponseByGraphType(graphType, logs)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, response)
+		ctx.Abort()
+		return
 	}
 
 	responseJSONBytes, err := json.Marshal(response)
@@ -135,4 +107,33 @@ func (h *Handler) Graph(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) getResponseByGraphType(graphType enums.GraphType, logs []*dto.LogData) (gin.H, bool) {
+	switch graphType {
+	case enums.GraphTypes.TopTimeSpentGraphType():
+		{
+			return gin.H{"data": h.graphService.TopTimeSpent(logs)}, true
+		}
+	case enums.GraphTypes.TopCountriesGraphType():
+		{
+			return gin.H{"data": h.graphService.TopCountries(logs)}, true
+		}
+	case enums.GraphTypes.PlayersInfoGraphType():
+		{
+			result, err := h.graphService.PlayersInfo()
+			if err != nil {
+				return gin.H{"error": err.Error()}, false
+			}
+			return gin.H{"data": result}, true
+		}
+	case enums.GraphTypes.OnlineStatisticsGraphType():
+		{
+			return gin.H{"data": h.graphService.OnlineStatistics(logs)}, true
+		}
+	default:
+		{
+			return gin.H{"data": "none"}, true
+		}
+	}
 }
