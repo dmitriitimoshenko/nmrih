@@ -30,6 +30,19 @@ services:
       networks:
         - traefik-net
 
+  redis:
+    image: redis:8.2.0-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   log_api:
     container_name: nmrih_log_api
     image: "nmrih_log_api:latest"
@@ -84,6 +97,7 @@ services:
 
 volumes:
   shared_data:
+  redis-data:
 
 networks:
   traefik-net:
