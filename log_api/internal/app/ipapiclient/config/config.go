@@ -4,8 +4,8 @@ type IPAPIClientConfig struct {
 	IPInfoAPIToken string
 }
 
-func NewIPAPIClientConfig(IPInfoAPIToken string) *IPAPIClientConfig {
+func NewIPAPIClientConfig(iPInfoAPIToken string) *IPAPIClientConfig {
 	return &IPAPIClientConfig{
-		IPInfoAPIToken: IPInfoAPIToken,
+		IPInfoAPIToken: iPInfoAPIToken,
 	}
 }
