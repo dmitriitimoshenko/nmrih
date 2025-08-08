@@ -81,7 +81,18 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 	if ok && cached != "" {
-		ctx.JSON(http.StatusOK, gin.H{"data": cached})
+		var response gin.H
+		if err := json.Unmarshal([]byte(cached), &response); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to unmarshal cached response"})
+			ctx.Abort()
+			return
+		}
+		if response["error"] != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error_cached": response["error"]})
+			ctx.Abort()
+			return
+		}
+		ctx.JSON(http.StatusOK, response)
 		return
 	}
 
