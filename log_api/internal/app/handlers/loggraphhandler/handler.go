@@ -30,7 +30,7 @@ func NewLogGraphHandler(
 ) *Handler {
 	logGraphHandlerCacheTTLMinutes, err := strconv.Atoi(os.Getenv("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES"))
 	if err != nil || logGraphHandlerCacheTTLMinutes <= 0 {
-		fmt.Println("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES not set or invalid, using default value of 5")
+		fmt.Println("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES not set or invalid, using default value of 5: " + err.Error())
 		logGraphHandlerCacheTTLMinutes = 5
 	}
 	logGraphHandlerCacheTTL := time.Duration(logGraphHandlerCacheTTLMinutes) * time.Minute
