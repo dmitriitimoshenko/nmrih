@@ -25,6 +25,10 @@ func (gt GraphType) String() string {
 	return string(gt)
 }
 
+func (gt GraphType) CanCache() bool {
+	return gt != playersInfoGraphType
+}
+
 type graphTypes struct{}
 
 func (graphTypes) TopTimeSpentGraphType() GraphType     { return topTimeSpentGraphType }

@@ -20,6 +20,7 @@ type Handler struct {
 	csvParser     csvParser
 	graphService  graphService
 	defaultTTL    time.Duration
+	cacheTimeout  time.Duration
 }
 
 func NewLogGraphHandler(
@@ -35,16 +36,23 @@ func NewLogGraphHandler(
 	}
 	logGraphHandlerCacheTTL := time.Duration(logGraphHandlerCacheTTLMinutes) * time.Minute
 
+	cacheTimeoutSeconds, err := strconv.Atoi(os.Getenv("LOG_GRAPH_HANDLER_CACHE_TIMEOUT_SECONDS"))
+	if err != nil || cacheTimeoutSeconds <= 0 {
+		fmt.Println("LOG_GRAPH_HANDLER_CACHE_TIMEOUT_SECONDS not set or invalid, using default value of 10: " + err.Error())
+		cacheTimeoutSeconds = 10
+	}
+	cacheTimeout := time.Duration(cacheTimeoutSeconds) * time.Second
+
 	return &Handler{
 		redisCache:    redisCache,
 		csvRepository: csvRepository,
 		csvParser:     csvParser,
 		graphService:  graphService,
 		defaultTTL:    logGraphHandlerCacheTTL,
+		cacheTimeout:  cacheTimeout,
 	}
 }
 
-//nolint:mnd,nolintlint
 func (h *Handler) Graph(ctx *gin.Context) {
 	graphTypeParam, ok := ctx.GetQuery("type")
 	if !ok {
@@ -71,24 +79,16 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	redisCacheKey := "graph_data:" + graphType.String()
-	timeoutCtx, cancel := context.WithTimeout(ctx.Request.Context(), time.Second*30)
-	defer cancel()
-	cached, ok, err := h.redisCache.Get(timeoutCtx, redisCacheKey)
+	cached, err := h.getCacheIfApplicable(ctx, graphType)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		ctx.Abort()
 		return
 	}
-	if ok && cached != "" {
+	if cached != nil {
 		var response gin.H
-		if err := json.Unmarshal([]byte(cached), &response); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to unmarshal cached response"})
-			ctx.Abort()
-			return
-		}
-		if response["error"] != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error_cached": response["error"]})
+		if err := json.Unmarshal([]byte(*cached), &response); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			ctx.Abort()
 			return
 		}
@@ -103,22 +103,58 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	responseJSONBytes, err := json.Marshal(response)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to marshal response for caching"})
-		ctx.Abort()
-		return
-	}
-
-	timeoutCtx, cancel = context.WithTimeout(ctx.Request.Context(), time.Second*30)
-	defer cancel()
-	if err := h.redisCache.Set(timeoutCtx, redisCacheKey, string(responseJSONBytes), &h.defaultTTL); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to cache graph data"})
+	if err := h.saveCacheIfApplicable(ctx, graphType, response); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		ctx.Abort()
 		return
 	}
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+//nolint:mnd // hardcoded timeout is expected
+func (h *Handler) getCacheIfApplicable(ctx context.Context, graphType enums.GraphType) (*string, error) {
+	if !graphType.CanCache() {
+		return nil, nil
+	}
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, h.cacheTimeout)
+	defer cancel()
+	cached, ok, err := h.redisCache.Get(timeoutCtx, "graph_data:"+graphType.String())
+	if err != nil {
+		fmt.Println("Error getting from cache:", err)
+		return nil, err
+	}
+	if ok && cached != "" {
+		return &cached, nil
+	}
+
+	return nil, nil
+}
+
+//nolint:mnd // hardcoded timeout is expected
+func (h *Handler) saveCacheIfApplicable(ctx context.Context, graphType enums.GraphType, response gin.H) error {
+	if !graphType.CanCache() {
+		return nil
+	}
+
+	responseJSONBytes, err := json.Marshal(response)
+	if err != nil {
+		return fmt.Errorf("failed to marshal response: %w", err)
+	}
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, h.cacheTimeout)
+	defer cancel()
+	if err := h.redisCache.Set(
+		timeoutCtx,
+		"graph_data:"+graphType.String(),
+		string(responseJSONBytes),
+		&h.defaultTTL,
+	); err != nil {
+		return fmt.Errorf("failed to save cached graph data: %w", err)
+	}
+
+	return nil
 }
 
 func (h *Handler) getResponseByGraphType(graphType enums.GraphType, logs []*dto.LogData) (gin.H, bool) {

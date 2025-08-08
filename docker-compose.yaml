@@ -79,6 +79,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_ADDR=redis:6379
       - LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES=5
+      - LOG_GRAPH_HANDLER_CACHE_TIMEOUT_SECONDS=10
     networks:
       - traefik-net
     labels:
