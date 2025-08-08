@@ -49,8 +49,12 @@ func main() {
 	log.Println("GIN Mode set to: ", ginMode)
 	gin.SetMode(ginMode)
 
-	redisCache := cache.NewRedisClient("redis:6379", "", 0, 5*time.Minute)
-	logGraphHandlerCacheTTL := time.Duration(5 * time.Minute)
+	redisCache := cache.NewRedisClient(os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), 0, 5*time.Minute)
+	logGraphHandlerCacheTTLMinutes, err := strconv.Atoi(os.Getenv("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	logGraphHandlerCacheTTL := time.Duration(logGraphHandlerCacheTTLMinutes) * time.Minute
 
 	serverPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
 	if err != nil {
