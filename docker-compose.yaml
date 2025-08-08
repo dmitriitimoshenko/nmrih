@@ -1,34 +1,34 @@
 services:
   traefik:
-      depends_on:
-        log_api:
-          condition: service_healthy
-      build:
-        dockerfile: Dockerfile
-        context: traefik
-      image: "nmrih_traefik:latest"
-      container_name: nmrih_traefik
-      restart: on-failure
-      command:
-        - "--log.level=WARN"
-        - "--api.dashboard=false"
-        - "--api.insecure=false"
-        - "--entryPoints.http.address=:80"
-        - "--entryPoints.https.address=:443"
-        - "--providers.docker=true"
-        - "--providers.docker.exposedbydefault=false"
-        - "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=http"
-      environment:
-        - TRAEFIK_ACME_EMAIL=${TRAEFIK_ACME_EMAIL}
-        - TRAEFIK_ACME_STORAGE=${TRAEFIK_ACME_STORAGE}
-      ports:
-        - "80:80"
-        - "443:443"
-      volumes:
-        - "/var/run/docker.sock:/var/run/docker.sock:ro"
-        - "./traefik/acme:/etc/traefik/acme"
-      networks:
-        - traefik-net
+    depends_on:
+      log_api:
+        condition: service_healthy
+    build:
+      dockerfile: Dockerfile
+      context: traefik
+    image: "nmrih_traefik:latest"
+    container_name: nmrih_traefik
+    restart: on-failure
+    command:
+      - "--log.level=WARN"
+      - "--api.dashboard=false"
+      - "--api.insecure=false"
+      - "--entryPoints.http.address=:80"
+      - "--entryPoints.https.address=:443"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=http"
+    environment:
+      - TRAEFIK_ACME_EMAIL=${TRAEFIK_ACME_EMAIL}
+      - TRAEFIK_ACME_STORAGE=${TRAEFIK_ACME_STORAGE}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/acme:/etc/traefik/acme"
+    networks:
+      - traefik-net
 
   redis:
     image: redis:8.2.0-alpine
@@ -44,6 +44,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - traefik-net
 
   log_api:
     container_name: nmrih_log_api
