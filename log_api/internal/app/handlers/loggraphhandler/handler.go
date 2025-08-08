@@ -44,6 +44,7 @@ func NewLogGraphHandler(
 	}
 }
 
+//nolint:mnd,nolintlint
 func (h *Handler) Graph(ctx *gin.Context) {
 	graphTypeParam, ok := ctx.GetQuery("type")
 	if !ok {
@@ -71,7 +72,7 @@ func (h *Handler) Graph(ctx *gin.Context) {
 	}
 
 	redisCacheKey := "graph_data:" + graphType.String()
-	timeoutCtx, cancel := context.WithTimeout(ctx.Request.Context(), time.Second)
+	timeoutCtx, cancel := context.WithTimeout(ctx.Request.Context(), time.Second*30)
 	defer cancel()
 	cached, ok, err := h.redisCache.Get(timeoutCtx, redisCacheKey)
 	if err != nil {
@@ -98,7 +99,7 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	timeoutCtx, cancel = context.WithTimeout(ctx.Request.Context(), time.Second)
+	timeoutCtx, cancel = context.WithTimeout(ctx.Request.Context(), time.Second*30)
 	defer cancel()
 	if err := h.redisCache.Set(timeoutCtx, redisCacheKey, string(responseJSONBytes), &h.defaultTTL); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to cache graph data"})
