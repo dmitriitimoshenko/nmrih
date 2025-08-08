@@ -71,32 +71,33 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	var result interface{}
+	var response gin.H
 
 	switch graphType {
 	case enums.GraphTypes.TopTimeSpentGraphType():
 		{
-			result = h.graphService.TopTimeSpent(logs)
+			response = gin.H{"data": h.graphService.TopTimeSpent(logs)}
 			break
 		}
 	case enums.GraphTypes.TopCountriesGraphType():
 		{
-			result = h.graphService.TopCountries(logs)
+			response = gin.H{"data": h.graphService.TopCountries(logs)}
 			break
 		}
 	case enums.GraphTypes.PlayersInfoGraphType():
 		{
-			result, err = h.graphService.PlayersInfo()
+			result, err := h.graphService.PlayersInfo()
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				ctx.Abort()
 				return
 			}
+			response = gin.H{"data": result}
 			break
 		}
 	case enums.GraphTypes.OnlineStatisticsGraphType():
 		{
-			result = h.graphService.OnlineStatistics(logs)
+			response = gin.H{"data": h.graphService.OnlineStatistics(logs)}
 			break
 		}
 	default:
@@ -106,7 +107,6 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		}
 	}
 
-	response := gin.H{"data": result}
 	responseJSONBytes, err := json.Marshal(response)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to marshal response for caching"})
