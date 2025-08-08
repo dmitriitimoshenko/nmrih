@@ -3,7 +3,10 @@ package loggraphhandler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
@@ -15,7 +18,7 @@ type Handler struct {
 	csvRepository csvRepository
 	csvParser     csvParser
 	graphService  graphService
-	defaultTTL    *time.Duration
+	defaultTTL    time.Duration
 }
 
 func NewLogGraphHandler(
@@ -23,14 +26,20 @@ func NewLogGraphHandler(
 	csvRepository csvRepository,
 	csvParser csvParser,
 	graphService graphService,
-	defaultTTL *time.Duration,
 ) *Handler {
+	logGraphHandlerCacheTTLMinutes, err := strconv.Atoi(os.Getenv("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES"))
+	if err != nil || logGraphHandlerCacheTTLMinutes <= 0 {
+		fmt.Println("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES not set or invalid, using default value of 5")
+		logGraphHandlerCacheTTLMinutes = 5
+	}
+	logGraphHandlerCacheTTL := time.Duration(logGraphHandlerCacheTTLMinutes) * time.Minute
+
 	return &Handler{
 		redisCache:    redisCache,
 		csvRepository: csvRepository,
 		csvParser:     csvParser,
 		graphService:  graphService,
-		defaultTTL:    defaultTTL,
+		defaultTTL:    logGraphHandlerCacheTTL,
 	}
 }
 
@@ -119,7 +128,7 @@ func (h *Handler) Graph(ctx *gin.Context) {
 
 	timeoutCtx, cancel = context.WithTimeout(ctx.Request.Context(), time.Second)
 	defer cancel()
-	if err := h.redisCache.Set(timeoutCtx, redisCacheKey, string(responseJSONBytes), h.defaultTTL); err != nil {
+	if err := h.redisCache.Set(timeoutCtx, redisCacheKey, string(responseJSONBytes), &h.defaultTTL); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to cache graph data"})
 		ctx.Abort()
 		return
