@@ -8,22 +8,29 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/ipapiclient/config"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 )
 
 const timeoutSeconds = 3
 
-type IPAPIClient struct{}
+type IPAPIClient struct {
+	config *config.IPAPIClientConfig
+}
 
-func NewIPAPIClient() *IPAPIClient {
-	return &IPAPIClient{}
+func NewIPAPIClient(config *config.IPAPIClientConfig) *IPAPIClient {
+	return &IPAPIClient{
+		config: config,
+	}
 }
 
 func (c *IPAPIClient) GetCountryByIP(ip string) (*dto.IPInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutSeconds*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://ipinfo.io/"+ip, nil)
+	url := c.getURL(ip)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -45,4 +52,8 @@ func (c *IPAPIClient) GetCountryByIP(ip string) (*dto.IPInfo, error) {
 		return nil, fmt.Errorf("failed to decode IP info: %w", err)
 	}
 	return info, nil
+}
+
+func (c *IPAPIClient) getURL(ip string) string {
+	return fmt.Sprintf("https://api.ipinfo.io/%s?token=%s", ip, c.config.IpInfoAPIToken)
 }

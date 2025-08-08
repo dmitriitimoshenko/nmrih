@@ -8,10 +8,11 @@ import (
 	"strconv"
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient"
-	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient/config"
+	a2sclientconfig "github.com/dmitriitimoshenko/nmrih/log_api/internal/app/a2sclient/config"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/handlers/loggraphhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/handlers/logparserhandler"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/app/ipapiclient"
+	ipapiclientconfig "github.com/dmitriitimoshenko/nmrih/log_api/internal/app/ipapiclient/config"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/csvgenerator"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/csvparser"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/services/csvrepository"
@@ -51,8 +52,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	ipAPIClient := ipapiclient.NewIPAPIClient()
-	a2sClientConfig := config.NewA2SClientConfig(
+	ipAPIClientConfig := ipapiclientconfig.NewIPAPIClientConfig(os.Getenv("IP_INFO_API_TOKEN"))
+	ipAPIClient := ipapiclient.NewIPAPIClient(ipAPIClientConfig)
+	a2sClientConfig := a2sclientconfig.NewA2SClientConfig(
 		os.Getenv("SERVER_ADDR"),
 		serverPort,
 	)

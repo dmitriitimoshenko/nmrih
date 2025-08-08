@@ -287,6 +287,6 @@ func (s *Service) addCountryIfIPAvailable(
 			errChan <- fmt.Errorf("failed to get country by IP [%s]: %w", ip, err)
 			return
 		}
-		logDataEntry.Country = ipInfo.Country
+		logDataEntry.Country = ipInfo.CountryCode
 	}
 }

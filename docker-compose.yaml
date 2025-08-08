@@ -55,6 +55,7 @@ services:
       - CSV_STORAGE_DIRECTORY=/data
       - LOGS_STORAGE_DIRECTORY=/logs/
       - LOGS_FILE_PATTERN=l*.log
+      - IP_INFO_API_TOKEN=${IP_INFO_API_TOKEN}
     networks:
       - traefik-net
     labels:
