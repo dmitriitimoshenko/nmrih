@@ -328,6 +328,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 
 	avgHourlyStats := make(dto.OnlineStatistics, 0, hoursInDay)
 	for hour, totalOverlap := range hourlyOverlap {
+		//nolint:mnd // Round to 2 decimals
 		avg := math.Round(totalOverlap/(float64(dayCount)*secondsInHour)*100) / 100
 		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
 			Hour:                   hour,
