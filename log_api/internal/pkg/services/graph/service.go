@@ -7,6 +7,7 @@ import (
 
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/dto"
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
+	"github.com/dmitriitimoshenko/nmrih/log_api/internal/tools"
 	"github.com/rumblefrog/go-a2s"
 )
 
@@ -319,7 +320,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 			}
 			overlap := overlapEnd.Sub(overlapStart).Seconds()
 			if overlap > 0 {
-				bucket := blockStart.Hour()
+				bucket := blockStart.In(tools.GetCETLocation()).Hour()
 				hourlyOverlap[bucket] += overlap
 			}
 		}
@@ -327,7 +328,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 
 	avgHourlyStats := make(dto.OnlineStatistics, 0, hoursInDay)
 	for hour, totalOverlap := range hourlyOverlap {
-		avg := totalOverlap / (float64(dayCount) * secondsInHour)
+		avg := math.Round(totalOverlap/(float64(dayCount)*secondsInHour)*100) / 100
 		avgHourlyStats = append(avgHourlyStats, dto.OnlineStatisticsHourUnit{
 			Hour:                   hour,
 			ConcurrentPlayersCount: avg,
