@@ -335,7 +335,7 @@ func (s *Service) OnlineStatistics(logsInput []*dto.LogData) dto.OnlineStatistic
 		})
 	}
 
-	return append(avgHourlyStats[3:], avgHourlyStats[:4]...)
+	return append(avgHourlyStats[5:], avgHourlyStats[:6]...)
 }
 
 func (s *Service) filterInvalidSessions(sessions []dto.Session) []dto.Session {
