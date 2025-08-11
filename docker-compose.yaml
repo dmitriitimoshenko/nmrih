@@ -31,6 +31,7 @@ services:
       - traefik-net
 
   redis:
+    container_name: nmrih_redis
     image: redis:8.2.0-alpine
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
     environment:
