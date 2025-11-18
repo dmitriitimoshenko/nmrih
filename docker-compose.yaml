@@ -33,15 +33,15 @@ services:
   redis:
     container_name: nmrih_redis
     image: redis:8.2.0-alpine
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}", "--port", "7379"]
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
-      - "6379:6379"
+      - "7379:7379"
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-p", "7379", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -78,7 +78,7 @@ services:
       - LOGS_FILE_PATTERN=l*.log
       - IP_INFO_API_TOKEN=${IP_INFO_API_TOKEN}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_ADDR=redis:6379
+      - REDIS_ADDR=redis:7379
       - LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES=5
       - LOG_GRAPH_HANDLER_CACHE_TIMEOUT_SECONDS=10
     networks:
