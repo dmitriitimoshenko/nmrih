@@ -55,7 +55,7 @@ services:
       dockerfile: Dockerfile
       context: log_api
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8090/health-check | grep 200 || exit 1"]
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8190/health-check | grep 200 || exit 1"]
       timeout: 3s
       retries: 3
       start_period: 3s
@@ -66,11 +66,11 @@ services:
       - shared_data:/data
       - ./logs:/logs
     ports:
-      - "8090"
+      - "8190"
     environment:
       - ENV=prod
       - GIN_MODE=release
-      - PORT=8090
+      - PORT=8190
       - SERVER_ADDR=rulat-bot.duckdns.org
       - SERVER_PORT=27015
       - CSV_STORAGE_DIRECTORY=/data
@@ -97,7 +97,7 @@ services:
       dockerfile: Dockerfile
       context: log_frontend
     ports:
-      - "8091"
+      - "8191"
     networks:
       - traefik-net
     labels:
