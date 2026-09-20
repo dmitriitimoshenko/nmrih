@@ -12,7 +12,8 @@ import (
 	"github.com/dmitriitimoshenko/nmrih/log_api/internal/pkg/enums"
 )
 
-const minValuesCount = 4
+// TimeStamp, NickName, Action, IPAddress, Country.
+const minValuesCount = 5
 
 type Service struct{}
 

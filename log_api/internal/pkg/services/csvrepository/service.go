@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+const (
+	fileNameDateLayout   = "2006-01-02_15:04:05"
+	fileNamePrefixLength = len("logs_")
+	fileNameDateLength   = len(fileNameDateLayout)
+)
+
 type Service struct {
 	config config
 }
@@ -22,24 +28,33 @@ func (s *Service) GetLastSavedDate() (*time.Time, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
-	if len(files) == 0 {
-		return nil, nil
-	}
 
-	var lastTime time.Time
+	var (
+		lastTime time.Time
+		found    bool
+	)
 	for _, file := range files {
-		name := file.Name()
 		// example: logs_2006-01-02_15:04:05.csv
-		dateString := name[5:24]
-		parsedTime, err := time.Parse("2006-01-02_15:04:05", dateString)
+		name := file.Name()
+		if file.IsDir() ||
+			!strings.HasSuffix(name, ".csv") ||
+			len(name) < fileNamePrefixLength+fileNameDateLength {
+			continue
+		}
+		dateString := name[fileNamePrefixLength : fileNamePrefixLength+fileNameDateLength]
+		parsedTime, err := time.Parse(fileNameDateLayout, dateString)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse time: %w", err)
 		}
-		if parsedTime.After(lastTime) {
+		if !found || parsedTime.After(lastTime) {
 			lastTime = parsedTime
+			found = true
 		}
 	}
 
+	if !found {
+		return nil, nil
+	}
 	return &lastTime, nil
 }
 
@@ -48,7 +63,7 @@ func (s *Service) Save(csvBytes []byte, requestTimeStamp time.Time) error {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	fileName := fmt.Sprintf("logs_%s.csv", requestTimeStamp.Format("2006-01-02_15:04:05"))
+	fileName := fmt.Sprintf("logs_%s.csv", requestTimeStamp.Format(fileNameDateLayout))
 	filePath := filepath.Join(s.config.CsvStorageDirectory, fileName)
 
 	if err := os.WriteFile(filePath, csvBytes, 0o600); err != nil {
