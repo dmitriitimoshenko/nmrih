@@ -1,0 +1,57 @@
+// Rendered into <gamedir>/nmrih/cfg/server.cfg at container start by
+// entrypoint.sh (envsubst), so edit this template + .env, never the copy
+// inside server_data/ - it is overwritten on every start.
+
+hostname "${NMRIH_HOSTNAME}"
+sv_contact "${NMRIH_SV_CONTACT}"
+sv_password "${NMRIH_SV_PASSWORD}"
+rcon_password "${NMRIH_RCON_PASSWORD}"
+
+// 0 = internet server (1 would also stop it from talking to Steam at all).
+sv_lan 0
+// Master-server region: 0 US-east, 3 Europe, 7 "world".
+sv_region ${NMRIH_SV_REGION}
+
+// --- logging -------------------------------------------------------------
+// This block is what feeds the dashboard: srcds writes L<MMDD><NNN>.log files
+// into <gamedir>/logs, which docker-compose mounts into log_api as /logs.
+log on
+sv_logfile 1
+sv_logbans 1
+sv_logecho 1
+sv_logsdir "logs"
+// 0 = one file per map/day (the pattern log_api globs for), 1 = single file.
+sv_log_onefile 0
+
+// --- downloads -----------------------------------------------------------
+sv_allowdownload 1
+sv_allowupload 1
+// Point this at a fastdl host to serve custom maps over HTTP instead of the
+// slow in-game download channel.
+sv_downloadurl ""
+
+// --- networking ----------------------------------------------------------
+sv_minrate 100000
+sv_maxrate 0
+sv_minupdaterate 20
+sv_maxupdaterate 66
+sv_mincmdrate 20
+sv_maxcmdrate 66
+fps_max 300
+
+// --- gameplay ------------------------------------------------------------
+sv_alltalk 1
+sv_pausable 0
+sv_cheats 0
+sv_voiceenable 1
+mp_timelimit 0
+
+// --- SourceTV ------------------------------------------------------------
+tv_enable ${NMRIH_TV_ENABLE}
+tv_name "NMRiH TV"
+tv_delay 30
+
+// Server-side bans, written by `banid`/`writeid`; srcds needs the files to
+// exist or it complains on every map change.
+exec banned_user.cfg
+exec banned_ip.cfg

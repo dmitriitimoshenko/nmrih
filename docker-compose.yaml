@@ -1,4 +1,49 @@
 services:
+  # The game itself: steamcmd installs/updates NMRiH app 317670 on every start
+  # and then runs srcds. Its log directory is the same host directory log_api
+  # reads, which is the whole integration between the two halves of this repo.
+  nmrih_server:
+    container_name: nmrih_server
+    image: "nmrih_server:latest"
+    build:
+      dockerfile: Dockerfile
+      context: nmrih_server
+    restart: unless-stopped
+    # srcds reads console commands from stdin; keeping it open makes
+    # `make server-console` (docker attach) work.
+    stdin_open: true
+    tty: true
+    stop_grace_period: 30s
+    environment:
+      - NMRIH_HOSTNAME=${NMRIH_HOSTNAME:-NMRiH Server}
+      - NMRIH_SV_PASSWORD=${NMRIH_SV_PASSWORD:-}
+      - NMRIH_RCON_PASSWORD=${NMRIH_RCON_PASSWORD:-}
+      - NMRIH_SV_REGION=${NMRIH_SV_REGION:-3}
+      - NMRIH_SV_CONTACT=${NMRIH_SV_CONTACT:-}
+      - NMRIH_GSLT=${NMRIH_GSLT:-}
+      - NMRIH_MAP=${NMRIH_MAP:-nmo_broadway}
+      - NMRIH_MAXPLAYERS=${NMRIH_MAXPLAYERS:-8}
+      - NMRIH_PORT=${NMRIH_PORT:-27015}
+      - NMRIH_CLIENT_PORT=${NMRIH_CLIENT_PORT:-27005}
+      - NMRIH_TV_PORT=${NMRIH_TV_PORT:-27020}
+      - NMRIH_TV_ENABLE=${NMRIH_TV_ENABLE:-0}
+      - NMRIH_EXTRA_ARGS=${NMRIH_EXTRA_ARGS:-}
+      - NMRIH_SKIP_UPDATE=${NMRIH_SKIP_UPDATE:-0}
+      - NMRIH_VALIDATE=${NMRIH_VALIDATE:-}
+    ports:
+      # Source reports the port it was started with to the master servers, so
+      # host and container port have to match for a publicly listed server.
+      - "${NMRIH_PORT:-27015}:${NMRIH_PORT:-27015}/udp"
+      - "${NMRIH_PORT:-27015}:${NMRIH_PORT:-27015}/tcp"
+      - "${NMRIH_TV_PORT:-27020}:${NMRIH_TV_PORT:-27020}/udp"
+    volumes:
+      # ~9 GB of game files - kept on the host so updates are incremental and
+      # custom maps/addons survive a rebuild.
+      - "${NMRIH_DATA_DIR:-./server_data}:/srv/nmrih"
+      - "./logs:/srv/nmrih/nmrih/logs"
+    networks:
+      - traefik-net
+
   traefik:
     depends_on:
       log_api:
@@ -18,6 +63,11 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=http"
+      # Traefik takes its static config from exactly one source and CLI flags
+      # win, so traefik/traefik.yaml is never consulted - email and storage
+      # have to be passed here or ACME writes its certs to a throwaway path.
+      - "--certificatesResolvers.myresolver.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesResolvers.myresolver.acme.storage=${TRAEFIK_ACME_STORAGE:-/etc/traefik/acme/acme.json}"
     environment:
       - TRAEFIK_ACME_EMAIL=${TRAEFIK_ACME_EMAIL}
       - TRAEFIK_ACME_STORAGE=${TRAEFIK_ACME_STORAGE}
@@ -30,9 +80,25 @@ services:
     networks:
       - traefik-net
 
+  # Keeps the dashboard's DuckDNS record pointed at this machine's current
+  # public IP (home connections do not get a static one). Off by default,
+  # because a host that already runs an updater only needs the subdomain added
+  # there: `docker compose --profile public up -d duckdns` to run it here.
+  duckdns:
+    container_name: nmrih_duckdns
+    image: lscr.io/linuxserver/duckdns:latest
+    profiles: ["public"]
+    environment:
+      - SUBDOMAINS=${DUCKDNS_SUBDOMAIN:-}
+      - TOKEN=${DUCKDNS_TOKEN:-}
+    restart: unless-stopped
+    networks:
+      - traefik-net
+
   redis:
     container_name: nmrih_redis
     image: redis:8.2.0-alpine
+    restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}", "--port", "7379"]
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -51,6 +117,7 @@ services:
   log_api:
     container_name: nmrih_log_api
     image: "nmrih_log_api:latest"
+    restart: unless-stopped
     build:
       dockerfile: Dockerfile
       context: log_api
@@ -62,6 +129,10 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      # A2S queries go to the game container over the compose network, so its
+      # name has to resolve before log_api builds its client.
+      nmrih_server:
+        condition: service_started
     volumes:
       - shared_data:/data
       - ./logs:/logs
@@ -71,11 +142,15 @@ services:
       - ENV=prod
       - GIN_MODE=release
       - PORT=8190
-      - SERVER_ADDR=rulat-bot.duckdns.org
-      - SERVER_PORT=27015
+      # Defaults to the game container next door; override in .env to point the
+      # dashboard at a server running somewhere else.
+      - SERVER_ADDR=${SERVER_ADDR:-nmrih_server}
+      - SERVER_PORT=${NMRIH_PORT:-27015}
       - CSV_STORAGE_DIRECTORY=/data
       - LOGS_STORAGE_DIRECTORY=/logs/
-      - LOGS_FILE_PATTERN=l*.log
+      # srcds names its files L<MMDD><NNN>.log (capital L), the glob covers
+      # both spellings.
+      - LOGS_FILE_PATTERN=${LOGS_FILE_PATTERN:-[Ll]*.log}
       - IP_INFO_API_TOKEN=${IP_INFO_API_TOKEN}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_ADDR=redis:7379
@@ -93,6 +168,7 @@ services:
   log_frontend:
     container_name: nmrih_log_frontend
     image: nmrih_log_frontend:latest
+    restart: unless-stopped
     build:
       dockerfile: Dockerfile
       context: log_frontend
