@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -246,9 +245,7 @@ func (s *Service) addNickAndTimeStamp(
 	logDataEntry.TimeStamp = parsedTime
 
 	// Используем regex для извлечения ника
-	nickMatches := regexp.
-		MustCompile(`:\s*"(.*?)(?:<\d+|<\[|<>|")`).
-		FindStringSubmatch(line)
+	nickMatches := tools.NickNameRegex.FindStringSubmatch(line)
 	if len(nickMatches) < 1 {
 		errChan <- fmt.Errorf(
 			"failed to get nickname from line [%s] of file [%s]: %+v",

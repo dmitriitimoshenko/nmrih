@@ -43,9 +43,8 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 func main() {
+	// gin.Default() already comes with the Logger and the Recovery middlewares
 	server := gin.Default()
-	server.Use(gin.Logger())
-	server.Use(gin.Recovery())
 	server.Use(CORSMiddleware())
 
 	ginMode := os.Getenv("GIN_MODE")
