@@ -19,6 +19,8 @@ const (
 	secondsInHour = 3600.0
 	hoursInDay    = 24
 	maxCentsCount = 100
+
+	unknownCountry = "Unknown"
 )
 
 type Service struct {
@@ -175,12 +177,17 @@ func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageLi
 
 	for _, logEntry := range logs {
 		if logEntry.Action == enums.Actions.Connected() {
-			if logEntry.Country == "" {
-				countriesConnectionsList["Unknown"]++
+			country := logEntry.Country
+			if country == "" {
+				country = unknownCountry
 			}
-			countriesConnectionsList[logEntry.Country]++
+			countriesConnectionsList[country]++
 			allConnectionsCount++
 		}
+	}
+
+	if allConnectionsCount == 0 {
+		return dto.TopCountriesPercentageList{}
 	}
 
 	topCountriesList := make(dto.TopCountriesList, 0, topCountries)
@@ -194,6 +201,10 @@ func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageLi
 				maxConnectionsCount = connectionsCount
 				maxConnectionsCountry = country
 			}
+		}
+		if maxConnectionsCount == 0 {
+			// no countries left to add
+			break
 		}
 		topCountriesList = append(topCountriesList, dto.TopCountry{
 			Country:          maxConnectionsCountry,
@@ -213,6 +224,10 @@ func (s *Service) TopCountries(logs []*dto.LogData) dto.TopCountriesPercentageLi
 		})
 	}
 
+	if otherPercentage < 0 {
+		// guard against floating point accumulation errors
+		otherPercentage = 0
+	}
 	topCountriesPercentageList = append(topCountriesPercentageList, dto.TopCountriesPercentage{
 		Country:    "Other",
 		Percentage: otherPercentage,
