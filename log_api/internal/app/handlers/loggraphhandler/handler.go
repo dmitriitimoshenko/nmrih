@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -31,14 +32,14 @@ func NewLogGraphHandler(
 ) *Handler {
 	logGraphHandlerCacheTTLMinutes, err := strconv.Atoi(os.Getenv("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES"))
 	if err != nil || logGraphHandlerCacheTTLMinutes <= 0 {
-		fmt.Println("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES not set or invalid, using default value of 5: " + err.Error())
+		log.Printf("LOG_GRAPH_HANDLER_CACHE_TTL_MINUTES not set or invalid (%v), using default value of 5\n", err)
 		logGraphHandlerCacheTTLMinutes = 5
 	}
 	logGraphHandlerCacheTTL := time.Duration(logGraphHandlerCacheTTLMinutes) * time.Minute
 
 	cacheTimeoutSeconds, err := strconv.Atoi(os.Getenv("LOG_GRAPH_HANDLER_CACHE_TIMEOUT_SECONDS"))
 	if err != nil || cacheTimeoutSeconds <= 0 {
-		fmt.Println("LOG_GRAPH_HANDLER_CACHE_TIMEOUT_SECONDS not set or invalid, using default value of 10: " + err.Error())
+		log.Printf("LOG_GRAPH_HANDLER_CACHE_TIMEOUT_SECONDS not set or invalid (%v), using default value of 10\n", err)
 		cacheTimeoutSeconds = 10
 	}
 	cacheTimeout := time.Duration(cacheTimeoutSeconds) * time.Second
@@ -66,18 +67,6 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	data, err := h.csvRepository.GetAllCSVData()
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		ctx.Abort()
-		return
-	}
-	logs, err := h.csvParser.Parse(data)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		ctx.Abort()
-		return
-	}
 
 	cached, err := h.getCacheIfApplicable(ctx, graphType)
 	if err != nil {
@@ -93,6 +82,19 @@ func (h *Handler) Graph(ctx *gin.Context) {
 			return
 		}
 		ctx.JSON(http.StatusOK, response)
+		return
+	}
+
+	data, err := h.csvRepository.GetAllCSVData()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.Abort()
+		return
+	}
+	logs, err := h.csvParser.Parse(data)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.Abort()
 		return
 	}
 
