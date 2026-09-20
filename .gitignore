@@ -4,19 +4,26 @@
 !log_api/
 !log_frontend/
 !traefik/
+!nmrih_server/
 
 !.gitignore
 !docker-compose.yaml
+!docker-compose.shared-proxy.yaml
 !LICENSE
 !Makefile
 !README.md
+!.env.example
 
 !.github/**
 !log_api/**
 !log_frontend/**
 !traefik/**
+!nmrih_server/**
 
 log_api/vendor
 log_api/main
 log_api/cover.out
 traefik/acme/
+# steamcmd install + srcds logs, both bind-mounted into the containers
+server_data/
+logs/

@@ -1,0 +1,28 @@
+# Override for hosts where another Traefik already owns :80/:443 - the bundled
+# one would just lose the port bind race. Set PROXY_NETWORK in .env to that
+# proxy's docker network and the Makefile adds this file automatically:
+#
+#     PROXY_NETWORK=dealscout_default
+#
+# The dashboard containers then join that network, and the existing Traefik -
+# which already discovers their labels through the docker socket - routes to
+# them. Nothing here touches the game server.
+services:
+  traefik:
+    # A profile nothing ever enables: keeps the bundled proxy out of `up`.
+    profiles: ["bundled-proxy-disabled"]
+
+  log_api:
+    networks:
+      - traefik-net
+      - proxy
+
+  log_frontend:
+    networks:
+      - traefik-net
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK}

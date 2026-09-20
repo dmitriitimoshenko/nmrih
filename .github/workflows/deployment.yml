@@ -4,26 +4,30 @@ on:
   push:
     branches:
       - main
+  # Lets a deploy be re-run from the Actions tab without an empty commit.
+  workflow_dispatch:
 
 jobs:
   deploy-prod:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
       - name: Deploy on remote server via SSH
-        uses: appleboy/ssh-action@v0.1.8
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
-          password: ${{ secrets.REMOTE_PASSWORD }}
+          # The host only accepts public key authentication; REMOTE_SSH_KEY
+          # holds the private half of the key in its authorized_keys.
+          key: ${{ secrets.REMOTE_SSH_KEY }}
           port: 2222
+          # `make up` rebuilds the images and lets steamcmd check the game
+          # install, neither of which fits in the 10m default.
+          command_timeout: 30m
+          # Without this the job stays green even when the deploy fails.
+          script_stop: true
           script: |
-            cd ~/steamcmd/nmrih_server/nmrih/
-            git switch origin/main
-            git pull origin main
+            cd ~/nmrih
+            git fetch origin main
+            git checkout -B main origin/main
             make docker-re-run
-            # make docker-clean-up
-            docker images
-            docker ps -a
+            make ps
