@@ -9,4 +9,7 @@ var (
 	DateTimeRegex = regexp.MustCompile(
 		`^L\s+(\d{2}\/\d{2}\/\d{4}\s-\s\d{2}:\d{2}:\d{2}):`,
 	)
+	NickNameRegex = regexp.MustCompile(
+		`:\s*"(.*?)(?:<\d+|<\[|<>|")`,
+	)
 )
