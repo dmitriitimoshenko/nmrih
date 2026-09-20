@@ -27,7 +27,14 @@ jobs:
           script_stop: true
           script: |
             cd ~/nmrih
-            git fetch origin main
+            # Plain `git fetch origin main` leaves refs/remotes/origin/main
+            # untouched on this host, which once deployed a months-old commit:
+            # its compose file knew nothing about the game server, so
+            # --remove-orphans deleted that container.
+            git fetch --prune origin
             git checkout -B main origin/main
+            # Refuse to deploy anything other than the commit that triggered
+            # this run, instead of quietly rolling the host backwards.
+            test "$(git rev-parse HEAD)" = "${{ github.sha }}"
             make docker-re-run
             make ps
