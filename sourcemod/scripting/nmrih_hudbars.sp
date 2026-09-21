@@ -15,7 +15,14 @@
 #include <sourcemod>
 #include <sdktools>
 
-#define PLUGIN_VERSION "1.0.0"
+#define PLUGIN_VERSION "1.1.0"
+
+/* Bumped whenever the generated config's defaults change. AutoExecConfig never
+ * rewrites an existing file, so without this a new look would be silently
+ * overridden by the config written for the previous one. */
+#define CONFIG_VERSION "2"
+#define CONFIG_FILE    "../../cfg/sourcemod/nmrih_hudbars.cfg"
+#define CONFIG_STAMP   "../../cfg/sourcemod/nmrih_hudbars.version"
 
 #define MIN_CELLS 4
 #define MAX_CELLS 40
@@ -39,8 +46,9 @@ ConVar g_cvY;
 ConVar g_cvLineHeight;
 ConVar g_cvInterval;
 ConVar g_cvCells;
-ConVar g_cvCharFull;
-ConVar g_cvCharEmpty;
+ConVar g_cvStyle;
+ConVar g_cvGlyphs;
+ConVar g_cvAlpha;
 ConVar g_cvNumberInside;
 ConVar g_cvHealthMax;
 ConVar g_cvStaminaMax;
@@ -64,6 +72,7 @@ Handle g_hTimer;
 
 char g_sResolved[PROP_COUNT][64];
 bool g_bResolved;
+float g_flStaminaSeen;
 
 /* Candidates used by sm_hudbars_scan to find the right netprops on this build. */
 char g_sStaminaCandidates[][] = {
@@ -85,15 +94,16 @@ public void OnPluginStart()
     g_cvEnabled      = CreateConVar("sm_hudbars_enabled", "1", "Enable the HUD bars", _, true, 0.0, true, 1.0);
     g_cvX            = CreateConVar("sm_hudbars_x", "0.015", "Horizontal position, 0.0 = left, 1.0 = right, -1 = centered", _, true, -1.0, true, 1.0);
     g_cvY            = CreateConVar("sm_hudbars_y", "0.045", "Vertical position of the first line, 0.0 = top, 1.0 = bottom", _, true, -1.0, true, 1.0);
-    g_cvLineHeight   = CreateConVar("sm_hudbars_line_height", "0.035", "Distance between the lines", _, true, 0.01, true, 0.2);
+    g_cvLineHeight   = CreateConVar("sm_hudbars_line_height", "0.05", "Distance between the lines", _, true, 0.01, true, 0.2);
     g_cvInterval     = CreateConVar("sm_hudbars_interval", "0.2", "Refresh interval in seconds", _, true, 0.1, true, 1.0);
-    g_cvCells        = CreateConVar("sm_hudbars_cells", "12", "Width of a bar in characters", _, true, float(MIN_CELLS), true, float(MAX_CELLS));
-    g_cvCharFull     = CreateConVar("sm_hudbars_char_full", "█", "Character of a filled cell. Use # if the font has no block glyphs");
-    g_cvCharEmpty    = CreateConVar("sm_hudbars_char_empty", "░", "Character of an empty cell. Use - if the font has no block glyphs");
-    g_cvNumberInside = CreateConVar("sm_hudbars_number_inside", "1", "1 = print the value inside the bar, 0 = after it", _, true, 0.0, true, 1.0);
+    g_cvCells        = CreateConVar("sm_hudbars_cells", "10", "Width of a bar in characters", _, true, float(MIN_CELLS), true, float(MAX_CELLS));
+    g_cvStyle        = CreateConVar("sm_hudbars_style", "shaded", "Bar look: shaded, blocks, squares, dots, ascii. Applies on the next refresh");
+    g_cvGlyphs       = CreateConVar("sm_hudbars_glyphs", "", "Overrides the style with two characters, \"<filled> <empty>\"");
+    g_cvAlpha        = CreateConVar("sm_hudbars_alpha", "220", "Opacity of the bars, 0-255", _, true, 0.0, true, 255.0);
+    g_cvNumberInside = CreateConVar("sm_hudbars_number_inside", "0", "1 = print the value inside the bar, 0 = after it", _, true, 0.0, true, 1.0);
     g_cvHealthMax    = CreateConVar("sm_hudbars_health_max", "100", "Health value that fills the bar completely", _, true, 1.0);
-    g_cvStaminaMax   = CreateConVar("sm_hudbars_stamina_max", "100", "Stamina value that fills the bar completely", _, true, 1.0);
-    g_cvStaminaColor = CreateConVar("sm_hudbars_stamina_color", "90 190 255", "Colour of the stamina bar, \"R G B\"");
+    g_cvStaminaMax   = CreateConVar("sm_hudbars_stamina_max", "0", "Stamina that fills the bar. 0 = learn it from the highest value seen", _, true, 0.0);
+    g_cvStaminaColor = CreateConVar("sm_hudbars_stamina_color", "120 175 220", "Colour of the stamina bar, \"R G B\"");
     g_cvIconBleeding = CreateConVar("sm_hudbars_icon_bleeding", "♦", "Icon shown while bleeding");
     g_cvIconInfected = CreateConVar("sm_hudbars_icon_infected", "▲", "Icon shown while infected");
 
@@ -119,10 +129,53 @@ public void OnPluginStart()
 
     g_cvInterval.AddChangeHook(OnIntervalChanged);
 
+    RefreshConfigIfStale();
     AutoExecConfig(true, "nmrih_hudbars");
 
     /* OnConfigsExecuted does not fire when the plugin is loaded mid-map. */
     RestartTimer();
+}
+
+/**
+ * Drops the generated config when it predates the current defaults, so a new
+ * look actually reaches a server that already ran an older build. Only the
+ * plugin's own file is touched, and only when CONFIG_VERSION moves.
+ */
+void RefreshConfigIfStale()
+{
+    char stampPath[PLATFORM_MAX_PATH];
+    char configPath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, stampPath, sizeof(stampPath), CONFIG_STAMP);
+    BuildPath(Path_SM, configPath, sizeof(configPath), CONFIG_FILE);
+
+    char stamped[16];
+    File stamp = OpenFile(stampPath, "r");
+    if (stamp != null)
+    {
+        if (!stamp.ReadLine(stamped, sizeof(stamped)))
+        {
+            stamped[0] = '\0';
+        }
+        delete stamp;
+        TrimString(stamped);
+    }
+
+    if (StrEqual(stamped, CONFIG_VERSION))
+    {
+        return;
+    }
+
+    if (FileExists(configPath) && DeleteFile(configPath))
+    {
+        LogMessage("defaults changed, regenerating cfg/sourcemod/nmrih_hudbars.cfg");
+    }
+
+    stamp = OpenFile(stampPath, "w");
+    if (stamp != null)
+    {
+        stamp.WriteLine("%s", CONFIG_VERSION);
+        delete stamp;
+    }
 }
 
 public void OnConfigsExecuted()
@@ -149,6 +202,7 @@ public void OnMapStart()
     /* A game update can rename or move a netprop, so never trust a resolution
      * from before the map change. */
     g_bResolved = false;
+    g_flStaminaSeen = 0.0;
 }
 
 public void OnClientPutInServer(int client)
@@ -179,14 +233,57 @@ public Action Timer_Draw(Handle timer)
     return Plugin_Continue;
 }
 
+/* Glyph pairs that have been eyeballed in game. "shaded" is the default because
+ * a solid block fills the whole line box and reads as a censor bar. */
+void StyleGlyphs(char[] full, int fullLen, char[] empty, int emptyLen)
+{
+    char override[32];
+    char parts[2][16];
+    g_cvGlyphs.GetString(override, sizeof(override));
+    if (ExplodeString(override, " ", parts, sizeof(parts), sizeof(parts[])) == 2)
+    {
+        strcopy(full, fullLen, parts[0]);
+        strcopy(empty, emptyLen, parts[1]);
+        return;
+    }
+
+    char style[16];
+    g_cvStyle.GetString(style, sizeof(style));
+
+    if (StrEqual(style, "blocks", false))
+    {
+        strcopy(full, fullLen, "█");
+        strcopy(empty, emptyLen, "░");
+    }
+    else if (StrEqual(style, "squares", false))
+    {
+        strcopy(full, fullLen, "■");
+        strcopy(empty, emptyLen, "□");
+    }
+    else if (StrEqual(style, "dots", false))
+    {
+        strcopy(full, fullLen, "●");
+        strcopy(empty, emptyLen, "○");
+    }
+    else if (StrEqual(style, "ascii", false))
+    {
+        strcopy(full, fullLen, "#");
+        strcopy(empty, emptyLen, "-");
+    }
+    else
+    {
+        strcopy(full, fullLen, "▓");
+        strcopy(empty, emptyLen, "░");
+    }
+}
+
 void DrawFor(int client)
 {
     ResolveProps(client);
 
     char full[16];
     char empty[16];
-    g_cvCharFull.GetString(full, sizeof(full));
-    g_cvCharEmpty.GetString(empty, sizeof(empty));
+    StyleGlyphs(full, sizeof(full), empty, sizeof(empty));
 
     int cells = g_cvCells.IntValue;
     if (cells < MIN_CELLS) cells = MIN_CELLS;
@@ -207,7 +304,7 @@ void DrawFor(int client)
     int r, g, b;
     HealthColour(healthFraction, r, g, b);
 
-    SetHudTextParams(x, y, hold, r, g, b, 255, 0, 0.0, 0.0, 0.0);
+    SetHudTextParams(x, y, hold, r, g, b, g_cvAlpha.IntValue, 0, 0.0, 0.0, 0.0);
     if (ShowSyncHudText(client, g_hHudHealth, "HP [%s]", healthBar) < 0)
     {
         /* The game has no usable HudMsg user message: fall back to hint text,
@@ -219,14 +316,14 @@ void DrawFor(int client)
     float stamina = ReadProp(client, PROP_STAMINA);
     if (stamina >= 0.0)
     {
-        float staminaFraction = Fraction(stamina, g_cvStaminaMax.FloatValue);
+        float staminaFraction = Fraction(stamina, StaminaMax(stamina));
 
         char staminaBar[256];
         BuildBar(staminaBar, sizeof(staminaBar), staminaFraction, cells, full, empty,
             RoundToNearest(stamina), inside);
 
         ParseColour(g_cvStaminaColor, r, g, b);
-        SetHudTextParams(x, y + line, hold, r, g, b, 255, 0, 0.0, 0.0, 0.0);
+        SetHudTextParams(x, y + line, hold, r, g, b, g_cvAlpha.IntValue, 0, 0.0, 0.0, 0.0);
         ShowSyncHudText(client, g_hHudStamina, "SP [%s]", staminaBar);
     }
 
@@ -274,7 +371,7 @@ void DrawStatus(int client, float x, float y, float hold)
         r = bright ? 150 : 110; g = 220; b = bright ? 90 : 60;
     }
 
-    SetHudTextParams(x, y, hold, r, g, b, 255, 0, 0.0, 0.0, 0.0);
+    SetHudTextParams(x, y, hold, r, g, b, g_cvAlpha.IntValue, 0, 0.0, 0.0, 0.0);
     ShowSyncHudText(client, g_hHudStatus, "%s", status);
 }
 
@@ -294,7 +391,7 @@ void DrawFallback(int client, const char[] healthBar, int cells, const char[] fu
     if (stamina >= 0.0)
     {
         char staminaBar[256];
-        BuildBar(staminaBar, sizeof(staminaBar), Fraction(stamina, g_cvStaminaMax.FloatValue),
+        BuildBar(staminaBar, sizeof(staminaBar), Fraction(stamina, StaminaMax(stamina)),
             cells, full, empty, RoundToNearest(stamina), inside);
         Format(line, sizeof(line), "%s\nSP [%s]", line, staminaBar);
     }
@@ -364,16 +461,16 @@ void HealthColour(float fraction, int &r, int &g, int &b)
     if (fraction <= 0.5)
     {
         float t = fraction / 0.5;
-        r = 230;
-        g = RoundToNearest(55.0 + t * 150.0);
-        b = RoundToNearest(50.0 + t * 20.0);
+        r = 215;
+        g = RoundToNearest(70.0 + t * 130.0);
+        b = RoundToNearest(65.0 + t * 25.0);
     }
     else
     {
         float t = (fraction - 0.5) / 0.5;
-        r = RoundToNearest(230.0 - t * 160.0);
-        g = RoundToNearest(205.0 + t * 15.0);
-        b = RoundToNearest(70.0 + t * 30.0);
+        r = RoundToNearest(215.0 - t * 90.0);
+        g = RoundToNearest(200.0 - t * 5.0);
+        b = RoundToNearest(90.0 + t * 25.0);
     }
 }
 
@@ -392,6 +489,27 @@ void ParseColour(ConVar convar, int &r, int &g, int &b)
     }
 
     r = 90; g = 190; b = 255;
+}
+
+/**
+ * NMRiH does not agree with everyone about what full stamina is - this build
+ * reports 130 - and there is no netprop saying so. Rather than shipping a
+ * number that is wrong somewhere else, the highest value ever seen is taken as
+ * the maximum. It is right within seconds of play and needs no configuration.
+ */
+float StaminaMax(float current)
+{
+    float configured = g_cvStaminaMax.FloatValue;
+    if (configured > 0.0)
+    {
+        return configured;
+    }
+
+    if (current > g_flStaminaSeen)
+    {
+        g_flStaminaSeen = current;
+    }
+    return (g_flStaminaSeen > 0.0) ? g_flStaminaSeen : 1.0;
 }
 
 float Fraction(float value, float max)
