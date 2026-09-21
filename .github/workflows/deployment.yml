@@ -23,14 +23,22 @@ jobs:
           # `make up` rebuilds the images and lets steamcmd check the game
           # install, neither of which fits in the 10m default.
           command_timeout: 30m
-          # Without this the job stays green even when the deploy fails.
-          script_stop: true
           script: |
+            # v1 of this action dropped the script_stop input, so setting it did
+            # nothing but print a warning: every command's failure was ignored
+            # and the job stayed green. The script has to stop itself.
+            set -eu
             cd ~/nmrih
             # Plain `git fetch origin main` leaves refs/remotes/origin/main
             # untouched on this host, which once deployed a months-old commit:
             # its compose file knew nothing about the game server, so
             # --remove-orphans deleted that container.
+            # The host has no key GitHub accepts, so over an SSH remote every
+            # fetch died with "Permission denied (publickey)" and left
+            # refs/remotes/origin/main stale - which, combined with the ignored
+            # script_stop, is how a green deploy rebuilt months-old code. This
+            # repository is public, so HTTPS needs no credentials.
+            git remote set-url origin https://github.com/dmitriitimoshenko/nmrih.git
             git fetch --prune origin
             git checkout -B main origin/main
             # Refuse to deploy anything other than the commit that triggered
