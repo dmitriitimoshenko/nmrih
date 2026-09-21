@@ -50,6 +50,7 @@ ConVar g_cvStyle;
 ConVar g_cvGlyphs;
 ConVar g_cvAlpha;
 ConVar g_cvNumberInside;
+ConVar g_cvLabels;
 ConVar g_cvHealthMax;
 ConVar g_cvStaminaMax;
 ConVar g_cvStaminaColor;
@@ -101,6 +102,7 @@ public void OnPluginStart()
     g_cvGlyphs       = CreateConVar("sm_hudbars_glyphs", "", "Overrides the style with two characters, \"<filled> <empty>\"");
     g_cvAlpha        = CreateConVar("sm_hudbars_alpha", "220", "Opacity of the bars, 0-255", _, true, 0.0, true, 255.0);
     g_cvNumberInside = CreateConVar("sm_hudbars_number_inside", "0", "1 = print the value inside the bar, 0 = after it", _, true, 0.0, true, 1.0);
+    g_cvLabels       = CreateConVar("sm_hudbars_labels", "1", "1 = HP/SP before the bars, 0 = no labels, which is what makes the bars line up exactly", _, true, 0.0, true, 1.0);
     g_cvHealthMax    = CreateConVar("sm_hudbars_health_max", "100", "Health value that fills the bar completely", _, true, 1.0);
     g_cvStaminaMax   = CreateConVar("sm_hudbars_stamina_max", "0", "Stamina that fills the bar. 0 = learn it from the highest value seen", _, true, 0.0);
     g_cvStaminaColor = CreateConVar("sm_hudbars_stamina_color", "120 175 220", "Colour of the stamina bar, \"R G B\"");
@@ -304,8 +306,13 @@ void DrawFor(int client)
     int r, g, b;
     HealthColour(healthFraction, r, g, b);
 
+    bool labelled = g_cvLabels.BoolValue;
+
+    char healthLine[320];
+    ComposeLine(healthLine, sizeof(healthLine), "HP ", healthBar, health, inside, labelled);
+
     SetHudTextParams(x, y, hold, r, g, b, g_cvAlpha.IntValue, 0, 0.0, 0.0, 0.0);
-    if (ShowSyncHudText(client, g_hHudHealth, "HP [%s]", healthBar) < 0)
+    if (ShowSyncHudText(client, g_hHudHealth, "%s", healthLine) < 0)
     {
         /* The game has no usable HudMsg user message: fall back to hint text,
          * which cannot be positioned or coloured but at least shows up. */
@@ -322,9 +329,13 @@ void DrawFor(int client)
         BuildBar(staminaBar, sizeof(staminaBar), staminaFraction, cells, full, empty,
             RoundToNearest(stamina), inside);
 
+        char staminaLine[320];
+        ComposeLine(staminaLine, sizeof(staminaLine), "SP ", staminaBar,
+            RoundToNearest(stamina), inside, labelled);
+
         ParseColour(g_cvStaminaColor, r, g, b);
         SetHudTextParams(x, y + line, hold, r, g, b, g_cvAlpha.IntValue, 0, 0.0, 0.0, 0.0);
-        ShowSyncHudText(client, g_hHudStamina, "SP [%s]", staminaBar);
+        ShowSyncHudText(client, g_hHudStamina, "%s", staminaLine);
     }
 
     DrawStatus(client, x, y + line * 2.0, hold);
@@ -384,8 +395,10 @@ void DrawFallback(int client, const char[] healthBar, int cells, const char[] fu
         LogError("ShowSyncHudText failed - this build has no usable HudMsg user message, falling back to hint text.");
     }
 
+    bool labelled = g_cvLabels.BoolValue;
+
     char line[320];
-    Format(line, sizeof(line), "HP [%s]", healthBar);
+    ComposeLine(line, sizeof(line), "HP ", healthBar, GetClientHealth(client), inside, labelled);
 
     float stamina = ReadProp(client, PROP_STAMINA);
     if (stamina >= 0.0)
@@ -393,7 +406,11 @@ void DrawFallback(int client, const char[] healthBar, int cells, const char[] fu
         char staminaBar[256];
         BuildBar(staminaBar, sizeof(staminaBar), Fraction(stamina, StaminaMax(stamina)),
             cells, full, empty, RoundToNearest(stamina), inside);
-        Format(line, sizeof(line), "%s\nSP [%s]", line, staminaBar);
+
+        char staminaLine[320];
+        ComposeLine(staminaLine, sizeof(staminaLine), "SP ", staminaBar,
+            RoundToNearest(stamina), inside, labelled);
+        Format(line, sizeof(line), "%s\n%s", line, staminaLine);
     }
 
     char icon[16];
@@ -449,10 +466,23 @@ void BuildBar(char[] out, int maxlen, float fraction, int cells, const char[] fu
         }
     }
 
-    if (numberStart == -1)
+}
+
+/**
+ * The label sits before the bar, which means the bars start wherever the label
+ * ends - and the HUD font is proportional, so "HP" and "SP" are not the same
+ * width and the two bars do not line up exactly. Turning labels off is what
+ * makes them line up: every line then starts with the same bracket.
+ */
+void ComposeLine(char[] out, int maxlen, const char[] label, const char[] bar,
+    int value, bool inside, bool labelled)
+{
+    if (inside)
     {
-        Format(out, maxlen, "%s %d", out, value);
+        Format(out, maxlen, "%s[%s]", labelled ? label : "", bar);
+        return;
     }
+    Format(out, maxlen, "%s[%s] %d", labelled ? label : "", bar, value);
 }
 
 /* Green when healthy, through yellow, to red when nearly dead. */

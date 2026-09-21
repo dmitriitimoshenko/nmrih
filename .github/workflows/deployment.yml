@@ -45,4 +45,7 @@ jobs:
             # this run, instead of quietly rolling the host backwards.
             test "$(git rev-parse HEAD)" = "${{ github.sha }}"
             make docker-re-run
+            # A changed .smx alters no image, so compose leaves the game server
+            # running with the plugin it started with. This notices and restarts.
+            make server-plugins-sync
             make ps

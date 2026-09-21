@@ -27,7 +27,7 @@ endif
 
 .PHONY: help prepare up down restart ps logs \
 	server-up server-update server-restart server-stop server-console server-logs server-check \
-	plugins monitoring-up monitoring-logs docker-re-run docker-clean-up
+	plugins server-plugins-sync monitoring-up monitoring-logs docker-re-run docker-clean-up
 
 help:
 	@echo "make up              build + start everything (game server + dashboard)"
@@ -42,6 +42,7 @@ help:
 	@echo "make server-check    is the server reachable from outside and listed on Steam?"
 	@echo ""
 	@echo "make plugins         compile sourcemod/scripting/*.sp (SourceMod $(SOURCEMOD_VERSION))"
+	@echo "make server-plugins-sync  restart the game server if a compiled plugin changed"
 	@echo ""
 	@echo "make monitoring-up   start just the dashboard stack ($(MONITORING_SERVICES))"
 
@@ -107,6 +108,27 @@ plugins:
 				"$$sm/spcomp64" -i "$$sm/include" \
 					-o "/work/plugins/$$(basename "$${sp%.sp}").smx" "$$sp"; \
 			done'
+
+# Plugins are mounted into the game container rather than baked into its image,
+# so `up --build` sees no reason to recreate it when only a .smx changed and the
+# entrypoint never gets to copy the new one in. Compare what is mounted with
+# what is installed and restart only when they actually differ.
+server-plugins-sync:
+	@stale=0; \
+	for plugin in sourcemod/plugins/*.smx; do \
+		[ -f "$$plugin" ] || continue; \
+		name=$$(basename "$$plugin"); \
+		want=$$(md5sum < "$$plugin" | cut -d' ' -f1); \
+		have=$$(docker exec nmrih_server md5sum \
+			"/srv/nmrih/nmrih/addons/sourcemod/plugins/$$name" 2>/dev/null | cut -d' ' -f1); \
+		if [ "$$want" != "$$have" ]; then echo "$$name is not the installed one"; stale=1; fi; \
+	done; \
+	if [ "$$stale" = "1" ]; then \
+		echo "restarting the game server to install it"; \
+		$(MAKE) server-restart; \
+	else \
+		echo "plugins already installed"; \
+	fi
 
 monitoring-up: prepare
 	$(COMPOSE) up -d --build $(MONITORING_SERVICES)

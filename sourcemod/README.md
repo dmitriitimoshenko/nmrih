@@ -25,8 +25,14 @@ So the whole loop is:
 ```bash
 vim sourcemod/scripting/nmrih_hudbars.sp
 make plugins          # compile, using the compiler inside the server image
-make server-restart    # the new .smx is copied in on start
+git push              # the deploy installs it
 ```
+
+A changed `.smx` alters no image, so `docker compose up --build` has no reason to
+recreate the game server and the entrypoint never gets to copy the new file in.
+`make server-plugins-sync` compares what is mounted with what is installed and
+restarts the game server only when they differ; the deploy runs it after every
+`make docker-re-run`, and it is also how you install a plugin by hand.
 
 `make plugins` needs no local SourcePawn toolchain: it compiles with the
 `spcomp64` that ships inside the game server image, which is by construction the
@@ -136,6 +142,7 @@ Generated on first run into `cfg/sourcemod/nmrih_hudbars.cfg`.
 | `sm_hudbars_glyphs` | empty | Overrides the style with `"<filled> <empty>"` |
 | `sm_hudbars_alpha` | `220` | Opacity, 0-255 |
 | `sm_hudbars_number_inside` | `0` | `1` = value inside the bar, `0` = after it |
+| `sm_hudbars_labels` | `1` | `1` = `HP`/`SP` before the bars, `0` = no labels, which lines the bars up exactly |
 | `sm_hudbars_health_max` | `100` | Health that fills the bar |
 | `sm_hudbars_stamina_max` | `0` | Stamina that fills the bar, `0` = learn it |
 | `sm_hudbars_stamina_color` | `120 175 220` | Colour of the stamina bar, `"R G B"` |
@@ -166,6 +173,24 @@ The rest of the knobs worth trying live: `sm_hudbars_cells` for length,
 `sm_hudbars_alpha` for how much it fights with the game, `sm_hudbars_y` and
 `sm_hudbars_line_height` for position and spacing, `sm_hudbars_number_inside 1`
 to put the number back inside the bar.
+
+## The bars do not line up exactly
+
+The HUD font is proportional, so `HP` and `SP` are not the same width, and a
+label before a bar means the two bars start a few pixels apart. Nothing can pad
+that away from the server side.
+
+`sm_hudbars_labels 0` is the fix: every line then starts with the same bracket,
+so the bars line up perfectly, and the colours still say which is which.
+
+```
+HP [▓▓▓▓▓▓▓▓▓▓] 100      [▓▓▓▓▓▓▓▓▓▓] 100
+SP [▓▓▓▓▓▓░░░░] 81       [▓▓▓▓▓▓░░░░] 81
+```
+
+The bar itself does not have this problem: the block glyphs share one width, so
+a bar keeps its length as it fills. `ascii` is the exception — `#` is wider than
+`-`, so that style's bar breathes. It is a fallback for broken fonts, not a look.
 
 ## Stamina has no fixed maximum
 
