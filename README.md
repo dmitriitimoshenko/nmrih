@@ -35,6 +35,9 @@ nmrih/
 │   │   ├── App.js            # Main application component
 │   │   └── App.css           # Global styles (dark theme, responsive design)
 │   └── package.json          # Frontend dependencies and scripts
+├── sourcemod/                # SourceMod plugins for the game server itself
+│   ├── scripting/            # Plugin sources (.sp)
+│   └── plugins/              # Compiled plugins (.smx)
 └── traefik/                  # Traefik configuration and SSL certificate storage (acme.json)
 ```
 
@@ -66,6 +69,11 @@ nmrih/
   - **Controls:**  
     Provides buttons for refreshing data and copying the server address to the clipboard (with temporary "Copied!" feedback).
   - Uses a dark theme and adapts its layout based on the device (horizontal on PC, vertical on mobile).
+
+- **SourceMod Plugins (sourcemod):**
+  - **HUD Bars:**
+    Health and stamina bars in a corner of the screen with the value inside the
+    bar, plus bleeding and infection icons. See [sourcemod/README.md](sourcemod/README.md).
 
 - **Traefik Reverse Proxy:**
   - Provides secure HTTPS support and manages SSL certificates.

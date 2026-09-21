@@ -3,6 +3,7 @@
 !.github/
 !log_api/
 !log_frontend/
+!sourcemod/
 !traefik/
 !nmrih_server/
 
@@ -17,6 +18,7 @@
 !.github/**
 !log_api/**
 !log_frontend/**
+!sourcemod/**
 !traefik/**
 !nmrih_server/**
 
