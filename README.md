@@ -77,7 +77,8 @@ nmrih/
   - Plugins in `sourcemod/plugins` are copied into the game on every start, so
     shipping a new build of one is `make plugins && make server-restart`.
   - **HUD Bars:** health and stamina bars in a corner of the screen with the
-    value inside the bar, plus bleeding and infection icons.
+    value inside the bar, plus bleeding and infection icons. The netprops it
+    reads differ between NMRiH builds, so it finds them itself.
   - See [sourcemod/README.md](sourcemod/README.md).
 
 - **Traefik Reverse Proxy:**
