@@ -25,6 +25,7 @@ nmrih/
 ├── logs/                     # srcds logs; written by the game, read by log_api (gitignored)
 ├── log_api/                  # Backend API for log parsing and CSV file management
 │   ├── Dockerfile            # Dockerfile for building the log_api container
+│   ├── cmd/servercheck/      # CLI: is the server reachable from outside and listed on Steam?
 │   └── internal/             # Source code for log parsing, CSV generation, etc.
 ├── log_frontend/             # React-based dashboard application
 │   ├── public/
@@ -194,6 +195,50 @@ server vanilla.
 
 [sourcemod/README.md](sourcemod/README.md) covers the layout, what a restart
 touches, and the bundled HUD bars plugin.
+
+## Diagnostics
+
+When nobody can find the server in the browser, there are two separate questions:
+does it answer queries from the public internet, and does Steam list it at all.
+`servercheck` answers both.
+
+```bash
+make server-check                                  # public address of this stack
+make server-check ARGS="-addr=example.com -json"   # somewhere else, as JSON
+```
+
+```
+A2S query from the public internet
+  name      : Krich Server
+  map       : nmo_cabin
+  game      : NMRiH: Classic (nmrih, appid 224260)
+  players   : 0/8 (0 bots)
+  password  : no
+  VAC       : yes
+
+Steam global server list
+  listed as : <ip>:27015
+  game      : appid 224260 (nmrih)
+  region    : 3 (Europe)
+  sv_lan    : no
+
+Verdict: reachable and listed globally.
+```
+
+It exits with `0` when the server is reachable and listed, `1` when it does not
+answer at all and `2` when it answers but Steam does not know it, so it drops
+straight into a cron job or a monitoring check.
+
+Three things worth knowing when reading the output:
+
+- **Run it from outside this host.** From inside the same network the query can
+  be answered without ever leaving the LAN, which proves nothing about the path
+  players take. The Steam half of the check is location independent.
+- **An empty server is not a missing server.** Both server browsers push empty
+  servers to the bottom of the list or hide them behind a filter, so a server
+  that is listed can still look absent. Search it by name or connect by address.
+- **The A2S packet stores the AppID in 16 bits**, so NMRiH reports `0` there.
+  The tool reads the real AppID out of the 64-bit `GameID` field and says so.
 
 ## Customization
 
