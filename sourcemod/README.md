@@ -83,36 +83,42 @@ SP [███░░58░░░░░]
 The health bar shifts from green through yellow to red as you lose health, the
 status line blinks, and every player can hide the whole thing with `!hud`.
 
-## Check this first
+## Netprops find themselves
 
-Health works on any build. **Stamina, bleeding and infection are read from
-netprops, and the names differ between NMRiH builds.** If a bar or an icon never
-shows up, connect to the server and run:
+Health comes from `GetClientHealth` and works anywhere. Stamina, bleeding and
+infection are netprops whose names differ between NMRiH builds, so the plugin
+resolves them itself against the first player it draws for, and again after
+every map change in case a game update moved something. There is nothing to
+configure and nothing to run.
 
-```
-sm_hudbars_scan
-```
+What it settled on is reported three ways:
 
-It prints your player's network class and which of the known netprop names
-actually exist on this build, with their current values. Point the cvars at
-whatever it finds:
+- in the SourceMod log: `netprops: stamina=m_flStamina bleeding=none infection=none`
+- as `sm_hudbars_detected`, which is `FCVAR_NOTIFY` and therefore part of the
+  server's A2S rules — readable from outside without touching the server
+- with `sm_hudbars_scan`, which additionally lists every candidate name that
+  exists on this build with its current value
 
-```
-sm_hudbars_prop_stamina  "m_flStamina"
-sm_hudbars_prop_bleeding "m_bIsBleeding"
-sm_hudbars_prop_infected "m_bIsInfected"
-```
+`sm_hudbars_scan` works from the server console and over rcon as well as in
+game: with no calling player it reads the props off the first connected one.
 
-An empty value hides that element. If the scan finds nothing, run
-`sm_dump_netprops_xml props.xml` and search the dump for the class name the scan
-printed.
+The `sm_hudbars_prop_*` cvars are overrides, not requirements:
+
+| Value | Meaning |
+| --- | --- |
+| empty (default) | detect automatically |
+| a netprop name | use it — but if this build does not have it, detection takes over anyway |
+| `none` | hide that element |
+
+That middle row is deliberate: a config written for one build cannot silently
+switch a bar off on another.
 
 ## Commands
 
 | Command | Access | What it does |
 | --- | --- | --- |
 | `sm_hud` | everyone | Hides/shows the bars for yourself |
-| `sm_hudbars_scan` | generic admin | Lists the netprops this build exposes |
+| `sm_hudbars_scan` | generic admin, or the server console | Lists the netprops this build exposes |
 
 ## ConVars
 
@@ -134,7 +140,8 @@ Generated on first run into `cfg/sourcemod/nmrih_hudbars.cfg`.
 | `sm_hudbars_stamina_color` | `90 190 255` | Colour of the stamina bar, `"R G B"` |
 | `sm_hudbars_icon_bleeding` | `♦` | Bleeding icon |
 | `sm_hudbars_icon_infected` | `▲` | Infection icon |
-| `sm_hudbars_prop_*` | see above | Netprop names |
+| `sm_hudbars_prop_*` | empty | Netprop overrides, see above |
+| `sm_hudbars_detected` | — | Reports what detection settled on; setting it does nothing |
 
 ## Notes
 

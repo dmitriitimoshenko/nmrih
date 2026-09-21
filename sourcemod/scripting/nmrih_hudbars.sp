@@ -50,10 +50,20 @@ ConVar g_cvIconInfected;
 ConVar g_cvPropStamina;
 ConVar g_cvPropBleeding;
 ConVar g_cvPropInfected;
+ConVar g_cvDetected;
 
 bool g_bHidden[MAXPLAYERS + 1];
 bool g_bHudMsgBroken;
 Handle g_hTimer;
+
+/* Netprops resolved against a live player, see ResolveProps. */
+#define PROP_STAMINA  0
+#define PROP_BLEEDING 1
+#define PROP_INFECTED 2
+#define PROP_COUNT    3
+
+char g_sResolved[PROP_COUNT][64];
+bool g_bResolved;
 
 /* Candidates used by sm_hudbars_scan to find the right netprops on this build. */
 char g_sStaminaCandidates[][] = {
@@ -87,11 +97,18 @@ public void OnPluginStart()
     g_cvIconBleeding = CreateConVar("sm_hudbars_icon_bleeding", "♦", "Icon shown while bleeding");
     g_cvIconInfected = CreateConVar("sm_hudbars_icon_infected", "▲", "Icon shown while infected");
 
-    /* Netprop names. Kept as cvars so a different NMRiH build can be corrected
-     * without recompiling: run sm_hudbars_scan in game to find the real ones. */
-    g_cvPropStamina  = CreateConVar("sm_hudbars_prop_stamina", "m_flStamina", "Netprop holding the stamina value, empty = hide the bar");
-    g_cvPropBleeding = CreateConVar("sm_hudbars_prop_bleeding", "m_bIsBleeding", "Netprop holding the bleeding flag, empty = no icon");
-    g_cvPropInfected = CreateConVar("sm_hudbars_prop_infected", "m_bIsInfected", "Netprop holding the infection flag, empty = no icon");
+    /* Netprop names differ between NMRiH builds, so the plugin finds them
+     * itself against a live player. These only exist to override that:
+     * empty = detect, a name = force it, "none" = hide that element. */
+    g_cvPropStamina  = CreateConVar("sm_hudbars_prop_stamina", "", "Stamina netprop. Empty = detect automatically, \"none\" = hide the bar");
+    g_cvPropBleeding = CreateConVar("sm_hudbars_prop_bleeding", "", "Bleeding netprop. Empty = detect automatically, \"none\" = hide the icon");
+    g_cvPropInfected = CreateConVar("sm_hudbars_prop_infected", "", "Infection netprop. Empty = detect automatically, \"none\" = hide the icon");
+
+    /* Reported rather than configured: FCVAR_NOTIFY puts it in the server's
+     * rules, so what the plugin detected can be read without server access. */
+    g_cvDetected = CreateConVar("sm_hudbars_detected", "pending",
+        "What the netprop detection settled on. Diagnostics only, setting it does nothing",
+        FCVAR_NOTIFY | FCVAR_DONTRECORD);
 
     RegConsoleCmd("sm_hud", Cmd_ToggleHud, "Toggle the health/stamina bars for yourself");
     RegAdminCmd("sm_hudbars_scan", Cmd_Scan, ADMFLAG_GENERIC, "List the netprops this build actually exposes");
@@ -129,6 +146,9 @@ void RestartTimer()
 public void OnMapStart()
 {
     g_bHudMsgBroken = false;
+    /* A game update can rename or move a netprop, so never trust a resolution
+     * from before the map change. */
+    g_bResolved = false;
 }
 
 public void OnClientPutInServer(int client)
@@ -161,6 +181,8 @@ public Action Timer_Draw(Handle timer)
 
 void DrawFor(int client)
 {
+    ResolveProps(client);
+
     char full[16];
     char empty[16];
     g_cvCharFull.GetString(full, sizeof(full));
@@ -194,7 +216,7 @@ void DrawFor(int client)
         return;
     }
 
-    float stamina = ReadProp(client, g_cvPropStamina);
+    float stamina = ReadProp(client, PROP_STAMINA);
     if (stamina >= 0.0)
     {
         float staminaFraction = Fraction(stamina, g_cvStaminaMax.FloatValue);
@@ -213,8 +235,8 @@ void DrawFor(int client)
 
 void DrawStatus(int client, float x, float y, float hold)
 {
-    bool bleeding = ReadFlag(client, g_cvPropBleeding);
-    bool infected = ReadFlag(client, g_cvPropInfected);
+    bool bleeding = ReadFlag(client, PROP_BLEEDING);
+    bool infected = ReadFlag(client, PROP_INFECTED);
 
     if (!bleeding && !infected)
     {
@@ -268,7 +290,7 @@ void DrawFallback(int client, const char[] healthBar, int cells, const char[] fu
     char line[320];
     Format(line, sizeof(line), "HP [%s]", healthBar);
 
-    float stamina = ReadProp(client, g_cvPropStamina);
+    float stamina = ReadProp(client, PROP_STAMINA);
     if (stamina >= 0.0)
     {
         char staminaBar[256];
@@ -278,12 +300,12 @@ void DrawFallback(int client, const char[] healthBar, int cells, const char[] fu
     }
 
     char icon[16];
-    if (ReadFlag(client, g_cvPropBleeding))
+    if (ReadFlag(client, PROP_BLEEDING))
     {
         g_cvIconBleeding.GetString(icon, sizeof(icon));
         Format(line, sizeof(line), "%s\n%s BLEEDING", line, icon);
     }
-    if (ReadFlag(client, g_cvPropInfected))
+    if (ReadFlag(client, PROP_INFECTED))
     {
         g_cvIconInfected.GetString(icon, sizeof(icon));
         Format(line, sizeof(line), "%s\n%s INFECTED", line, icon);
@@ -384,11 +406,84 @@ float Fraction(float value, float max)
     return fraction;
 }
 
-/* Reads a netprop as a float, whatever its actual type is. -1.0 = not available. */
-float ReadProp(int client, ConVar convar)
+/**
+ * Works out which netprops this build actually has, once, against a player that
+ * is in the game. The cvars are only consulted as an override: a name that does
+ * not exist here is ignored rather than obeyed, so a config written for another
+ * build cannot switch the bars off.
+ */
+void ResolveProps(int client)
+{
+    if (g_bResolved)
+    {
+        return;
+    }
+    g_bResolved = true;
+
+    ResolveOne(client, PROP_STAMINA, g_cvPropStamina,
+        g_sStaminaCandidates, sizeof(g_sStaminaCandidates));
+    ResolveOne(client, PROP_BLEEDING, g_cvPropBleeding,
+        g_sBleedingCandidates, sizeof(g_sBleedingCandidates));
+    ResolveOne(client, PROP_INFECTED, g_cvPropInfected,
+        g_sInfectedCandidates, sizeof(g_sInfectedCandidates));
+
+    char stamina[64];
+    char bleeding[64];
+    char infection[64];
+    Describe(PROP_STAMINA, stamina, sizeof(stamina));
+    Describe(PROP_BLEEDING, bleeding, sizeof(bleeding));
+    Describe(PROP_INFECTED, infection, sizeof(infection));
+
+    char summary[192];
+    Format(summary, sizeof(summary), "stamina=%s bleeding=%s infection=%s",
+        stamina, bleeding, infection);
+
+    g_cvDetected.SetString(summary);
+    LogMessage("netprops: %s", summary);
+}
+
+void ResolveOne(int client, int slot, ConVar convar, const char[][] candidates, int count)
+{
+    g_sResolved[slot][0] = '\0';
+
+    char configured[64];
+    convar.GetString(configured, sizeof(configured));
+
+    if (strcmp(configured, "none", false) == 0)
+    {
+        return;
+    }
+    if (configured[0] != '\0' && HasEntProp(client, Prop_Send, configured))
+    {
+        strcopy(g_sResolved[slot], sizeof(g_sResolved[]), configured);
+        return;
+    }
+    if (configured[0] != '\0')
+    {
+        LogMessage("configured netprop \"%s\" does not exist on this build, detecting instead", configured);
+    }
+
+    for (int i = 0; i < count; i++)
+    {
+        if (HasEntProp(client, Prop_Send, candidates[i]))
+        {
+            strcopy(g_sResolved[slot], sizeof(g_sResolved[]), candidates[i]);
+            return;
+        }
+    }
+}
+
+void Describe(int slot, char[] out, int maxlen)
+{
+    strcopy(out, maxlen, g_sResolved[slot][0] == '\0' ? "none" : g_sResolved[slot]);
+}
+
+/* Reads a resolved netprop as a float, whatever its actual type is.
+ * -1.0 = this build does not have it. */
+float ReadProp(int client, int slot)
 {
     char prop[64];
-    convar.GetString(prop, sizeof(prop));
+    strcopy(prop, sizeof(prop), g_sResolved[slot]);
     if (prop[0] == '\0' || !HasEntProp(client, Prop_Send, prop))
     {
         return -1.0;
@@ -414,9 +509,9 @@ float ReadProp(int client, ConVar convar)
 }
 
 /* Anything above zero counts as set, so timer-style props work as flags too. */
-bool ReadFlag(int client, ConVar convar)
+bool ReadFlag(int client, int slot)
 {
-    return ReadProp(client, convar) > 0.0;
+    return ReadProp(client, slot) > 0.0;
 }
 
 public Action Cmd_ToggleHud(int client, int args)
@@ -446,33 +541,58 @@ public Action Cmd_ToggleHud(int client, int args)
  */
 public Action Cmd_Scan(int client, int args)
 {
-    if (client == 0 || !IsClientInGame(client))
+    /* Falls back to any connected player so this works from the server console
+     * and over rcon, where there is no caller to read props off. */
+    int target = (client > 0 && IsClientInGame(client)) ? client : FirstPlayer();
+    if (target == 0)
     {
-        ReplyToCommand(client, "[SM] Run this in game, the props are read off your own player.");
+        ReplyToCommand(client, "[SM] Nobody is connected: the props are read off a live player.");
         return Plugin_Handled;
     }
 
-    char netclass[64];
-    GetEntityNetClass(client, netclass, sizeof(netclass));
-    ReplyToCommand(client, "[SM] Network class: %s", netclass);
+    ResolveProps(target);
 
-    ScanGroup(client, netclass, "stamina", g_sStaminaCandidates, sizeof(g_sStaminaCandidates));
-    ScanGroup(client, netclass, "bleeding", g_sBleedingCandidates, sizeof(g_sBleedingCandidates));
-    ScanGroup(client, netclass, "infection", g_sInfectedCandidates, sizeof(g_sInfectedCandidates));
+    char netclass[64];
+    GetEntityNetClass(target, netclass, sizeof(netclass));
+    ReplyToCommand(client, "[SM] Network class: %s", netclass);
+    char stamina[64];
+    char bleeding[64];
+    char infection[64];
+    Describe(PROP_STAMINA, stamina, sizeof(stamina));
+    Describe(PROP_BLEEDING, bleeding, sizeof(bleeding));
+    Describe(PROP_INFECTED, infection, sizeof(infection));
+    ReplyToCommand(client, "[SM] In use: stamina=%s bleeding=%s infection=%s",
+        stamina, bleeding, infection);
+
+    ScanGroup(target, client, netclass, "stamina", g_sStaminaCandidates, sizeof(g_sStaminaCandidates));
+    ScanGroup(target, client, netclass, "bleeding", g_sBleedingCandidates, sizeof(g_sBleedingCandidates));
+    ScanGroup(target, client, netclass, "infection", g_sInfectedCandidates, sizeof(g_sInfectedCandidates));
 
     ReplyToCommand(client, "[SM] Nothing useful above? Run sm_dump_netprops_xml props.xml and search it for the class shown here.");
     return Plugin_Handled;
 }
 
-void ScanGroup(int client, const char[] netclass, const char[] label,
+int FirstPlayer()
+{
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (IsClientInGame(client) && !IsFakeClient(client))
+        {
+            return client;
+        }
+    }
+    return 0;
+}
+
+void ScanGroup(int target, int reply, const char[] netclass, const char[] label,
     const char[][] candidates, int count)
 {
-    ReplyToCommand(client, "[SM] --- %s ---", label);
+    ReplyToCommand(reply, "[SM] --- %s ---", label);
 
     bool found = false;
     for (int i = 0; i < count; i++)
     {
-        if (!HasEntProp(client, Prop_Send, candidates[i]))
+        if (!HasEntProp(target, Prop_Send, candidates[i]))
         {
             continue;
         }
@@ -482,18 +602,18 @@ void ScanGroup(int client, const char[] netclass, const char[] label,
         PropFieldType type;
         if (FindSendPropInfo(netclass, candidates[i], type) != -1 && type == PropField_Float)
         {
-            ReplyToCommand(client, "[SM]   %s = %.2f (float)", candidates[i],
-                GetEntPropFloat(client, Prop_Send, candidates[i]));
+            ReplyToCommand(reply, "[SM]   %s = %.2f (float)", candidates[i],
+                GetEntPropFloat(target, Prop_Send, candidates[i]));
         }
         else
         {
-            ReplyToCommand(client, "[SM]   %s = %d (int)", candidates[i],
-                GetEntProp(client, Prop_Send, candidates[i]));
+            ReplyToCommand(reply, "[SM]   %s = %d (int)", candidates[i],
+                GetEntProp(target, Prop_Send, candidates[i]));
         }
     }
 
     if (!found)
     {
-        ReplyToCommand(client, "[SM]   none of the known names exist here");
+        ReplyToCommand(reply, "[SM]   none of the known names exist here");
     }
 }
