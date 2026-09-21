@@ -1,0 +1,71 @@
+name: Plugins
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  push:
+    branches:
+      - main
+
+jobs:
+  compile-sourcepawn:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      # The version the game server image is built with, so CI compiles against
+      # exactly the SourceMod the server ends up running.
+      - name: Read the pinned SourceMod version
+        run: |
+          version="$(grep -E '^ARG SOURCEMOD_VERSION=' nmrih_server/Dockerfile | cut -d= -f2)"
+          test -n "${version}"
+          echo "SOURCEMOD_VERSION=${version}" >> "${GITHUB_ENV}"
+          echo "SOURCEMOD_BRANCH=$(echo "${version}" | cut -d. -f1,2)" >> "${GITHUB_ENV}"
+
+      - name: Download SourceMod
+        run: |
+          curl -fsSL -o /tmp/sourcemod.tar.gz \
+            "https://sm.alliedmods.net/smdrop/${SOURCEMOD_BRANCH}/sourcemod-${SOURCEMOD_VERSION}-linux.tar.gz"
+          mkdir -p /tmp/sourcemod
+          tar -xzf /tmp/sourcemod.tar.gz -C /tmp/sourcemod
+
+      # Warnings are failures here: the plugins in this repository compile clean,
+      # and a new one is the cheapest possible signal that something is off.
+      - name: Compile plugins
+        run: |
+          scripting=/tmp/sourcemod/addons/sourcemod/scripting
+          chmod +x "${scripting}/spcomp64"
+          mkdir -p /tmp/built
+          status=0
+          for source in sourcemod/scripting/*.sp; do
+            name="$(basename "${source}" .sp)"
+            echo "::group::${name}"
+            if output="$("${scripting}/spcomp64" -i "${scripting}/include" \
+                -o "/tmp/built/${name}.smx" "${source}" 2>&1)"; then
+              echo "${output}"
+              if echo "${output}" | grep -qi "warning"; then
+                echo "::error file=${source}::compiles with warnings"
+                status=1
+              fi
+            else
+              echo "${output}"
+              echo "::error file=${source}::failed to compile"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${status}"
+
+      # A stale .smx next to an edited .sp would silently ship the old plugin.
+      - name: Every source has a committed binary
+        run: |
+          status=0
+          for source in sourcemod/scripting/*.sp; do
+            name="$(basename "${source}" .sp)"
+            if [ ! -f "sourcemod/plugins/${name}.smx" ]; then
+              echo "::error file=${source}::sourcemod/plugins/${name}.smx is missing, run 'make plugins'"
+              status=1
+            fi
+          done
+          exit "${status}"

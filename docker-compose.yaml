@@ -30,6 +30,7 @@ services:
       - NMRIH_EXTRA_ARGS=${NMRIH_EXTRA_ARGS:-}
       - NMRIH_SKIP_UPDATE=${NMRIH_SKIP_UPDATE:-0}
       - NMRIH_VALIDATE=${NMRIH_VALIDATE:-}
+      - NMRIH_SOURCEMOD=${NMRIH_SOURCEMOD:-1}
     ports:
       # Source reports the port it was started with to the master servers, so
       # host and container port have to match for a publicly listed server.
@@ -41,6 +42,9 @@ services:
       # custom maps/addons survive a rebuild.
       - "${NMRIH_DATA_DIR:-./server_data}:/srv/nmrih"
       - "./logs:/srv/nmrih/nmrih/logs"
+      # Compiled plugins from this repository; the entrypoint copies them into
+      # the game on start, so shipping a new build of one is just a restart.
+      - "./sourcemod/plugins:/opt/nmrih/plugins:ro"
     networks:
       - traefik-net
 

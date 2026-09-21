@@ -12,6 +12,22 @@ SERVER_DIR="${SERVER_DIR:-/srv/nmrih}"
 GAME_DIR="${SERVER_DIR}/nmrih"
 STEAMCMD="${STEAMCMD:-/home/steam/steamcmd/steamcmd.sh}"
 UPDATE_RETRIES="${NMRIH_UPDATE_RETRIES:-3}"
+ADDONS_STAGE="${ADDONS_STAGE:-/opt/nmrih/addons}"
+PLUGINS_DIR="${PLUGINS_DIR:-/opt/nmrih/plugins}"
+
+# Refreshed from the image on every start so they always match the pinned
+# Metamod/SourceMod build. Everything else the two archives ship - configs,
+# data, logs, hand-added plugins - is written once and then left alone.
+FRAMEWORK_PATHS=(
+    addons/metamod/bin
+    addons/metamod.vdf
+    addons/metamod/sourcemod.vdf
+    addons/sourcemod/bin
+    addons/sourcemod/extensions
+    addons/sourcemod/gamedata
+    addons/sourcemod/scripting
+    addons/sourcemod/translations
+)
 
 log() { echo "[entrypoint] $*"; }
 
@@ -55,6 +71,66 @@ link_steamclient() {
     return 0
 }
 
+# Metamod and SourceMod live in addons/, which steamcmd does not manage, so the
+# install survives game updates. The engine finds Metamod through
+# addons/metamod.vdf and Metamod finds SourceMod through
+# addons/metamod/sourcemod.vdf; both ship inside the archives, so putting the
+# files in place is the entire installation.
+install_sourcemod() {
+    if [ "${NMRIH_SOURCEMOD:-1}" != "1" ]; then
+        log "NMRIH_SOURCEMOD=${NMRIH_SOURCEMOD:-1}, leaving the server vanilla"
+        return 0
+    fi
+    if [ ! -d "${ADDONS_STAGE}/addons" ]; then
+        log "no Metamod/SourceMod staged in the image, skipping"
+        return 0
+    fi
+
+    mkdir -p "${GAME_DIR}"
+
+    # First run lays down the whole tree. -n keeps anything already there,
+    # which is what protects an admin's edited configs on later starts.
+    cp -rn "${ADDONS_STAGE}/." "${GAME_DIR}/" 2>/dev/null || true
+
+    local path
+    for path in "${FRAMEWORK_PATHS[@]}"; do
+        [ -e "${ADDONS_STAGE}/${path}" ] || continue
+        rm -rf "${GAME_DIR:?}/${path}"
+        cp -r "${ADDONS_STAGE}/${path}" "${GAME_DIR}/${path}"
+    done
+
+    # Stock plugins are copied file by file: replacing the whole directory
+    # would take any plugin the admin dropped in with it.
+    mkdir -p "${GAME_DIR}/addons/sourcemod/plugins"
+    cp -f "${ADDONS_STAGE}"/addons/sourcemod/plugins/*.smx \
+        "${GAME_DIR}/addons/sourcemod/plugins/" 2>/dev/null || true
+
+    log "metamod ${METAMOD_VERSION:-?} + sourcemod ${SOURCEMOD_VERSION:-?} in place"
+}
+
+# Plugins from this repository, bind-mounted read-only by docker-compose. They
+# are copied on every start, so shipping a new build of one is a restart.
+install_plugins() {
+    if [ "${NMRIH_SOURCEMOD:-1}" != "1" ] || [ ! -d "${PLUGINS_DIR}" ]; then
+        return 0
+    fi
+
+    local target="${GAME_DIR}/addons/sourcemod/plugins"
+    local plugin count=0
+    mkdir -p "${target}"
+
+    for plugin in "${PLUGINS_DIR}"/*.smx; do
+        [ -f "${plugin}" ] || continue
+        cp -f "${plugin}" "${target}/"
+        log "plugin: $(basename "${plugin}")"
+        count=$((count + 1))
+    done
+
+    if [ "${count}" -eq 0 ]; then
+        log "no plugins in ${PLUGINS_DIR}"
+    fi
+}
+
 render_cfg() {
     mkdir -p "${GAME_DIR}/cfg" "${GAME_DIR}/logs"
 
@@ -65,6 +141,7 @@ render_cfg() {
     export NMRIH_SV_CONTACT="${NMRIH_SV_CONTACT:-}"
     export NMRIH_TV_ENABLE="${NMRIH_TV_ENABLE:-0}"
 
+    # shellcheck disable=SC2016 # envsubst wants the literal names, not their values
     envsubst \
         '${NMRIH_HOSTNAME} ${NMRIH_SV_PASSWORD} ${NMRIH_RCON_PASSWORD} ${NMRIH_SV_REGION} ${NMRIH_SV_CONTACT} ${NMRIH_TV_ENABLE}' \
         < /opt/nmrih/cfg/server.cfg.template \
@@ -138,12 +215,16 @@ case "${1:-run}" in
             update_server "${NMRIH_VALIDATE:+validate}"
         fi
         link_steamclient
+        install_sourcemod
+        install_plugins
         render_cfg
         run_server
         ;;
     update)
         update_server validate
         link_steamclient
+        install_sourcemod
+        install_plugins
         ;;
     *)
         exec "$@"
