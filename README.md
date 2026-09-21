@@ -35,9 +35,9 @@ nmrih/
 │   │   ├── App.js            # Main application component
 │   │   └── App.css           # Global styles (dark theme, responsive design)
 │   └── package.json          # Frontend dependencies and scripts
-├── sourcemod/                # SourceMod plugins for the game server itself
-│   ├── scripting/            # Plugin sources (.sp)
-│   └── plugins/              # Compiled plugins (.smx)
+├── sourcemod/                # SourceMod plugins, compiled and shipped by this repo
+│   ├── scripting/            # Plugin sources (.sp), built by `make plugins`
+│   └── plugins/              # Compiled plugins (.smx), mounted into the game container
 └── traefik/                  # Traefik configuration and SSL certificate storage (acme.json)
 ```
 
@@ -71,9 +71,13 @@ nmrih/
   - Uses a dark theme and adapts its layout based on the device (horizontal on PC, vertical on mobile).
 
 - **SourceMod Plugins (sourcemod):**
-  - **HUD Bars:**
-    Health and stamina bars in a corner of the screen with the value inside the
-    bar, plus bleeding and infection icons. See [sourcemod/README.md](sourcemod/README.md).
+  - Metamod:Source and SourceMod are installed into the game server container
+    automatically, pinned to exact versions.
+  - Plugins in `sourcemod/plugins` are copied into the game on every start, so
+    shipping a new build of one is `make plugins && make server-restart`.
+  - **HUD Bars:** health and stamina bars in a corner of the screen with the
+    value inside the bar, plus bleeding and infection icons.
+  - See [sourcemod/README.md](sourcemod/README.md).
 
 - **Traefik Reverse Proxy:**
   - Provides secure HTTPS support and manages SSL certificates.
@@ -165,6 +169,31 @@ then put it in `.env` as `NMRIH_GSLT=` and run `make server-restart`.
     Allows to get insights about what is an average count of concurrent sessions at any hour in a day.
   - **Controls:**  
     Refresh the data or copy the server address using the provided buttons.
+
+## Plugins
+
+The game server container installs Metamod:Source and SourceMod by itself and
+picks up every `.smx` in `sourcemod/plugins` on start. Nothing is copied to the
+server by hand.
+
+```bash
+make plugins          # compile sourcemod/scripting/*.sp
+make server-restart   # the new binaries are installed on start
+```
+
+`make plugins` compiles with the `spcomp64` inside the game server image, so no
+local SourcePawn toolchain is needed and plugins are always built against
+exactly the SourceMod the server runs. Both versions are pinned as build args in
+`nmrih_server/Dockerfile`; the Makefile and CI read the SourceMod pin from there,
+so there is one place to bump.
+
+Configs edited on the server (`addons/sourcemod/configs`, `cfg/sourcemod`) and
+plugins added there by hand survive restarts; the version-coupled parts of the
+framework are refreshed on every start. `NMRIH_SOURCEMOD=0` in `.env` leaves the
+server vanilla.
+
+[sourcemod/README.md](sourcemod/README.md) covers the layout, what a restart
+touches, and the bundled HUD bars plugin.
 
 ## Customization
 
