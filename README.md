@@ -25,6 +25,7 @@ nmrih/
 ├── logs/                     # srcds logs; written by the game, read by log_api (gitignored)
 ├── log_api/                  # Backend API for log parsing and CSV file management
 │   ├── Dockerfile            # Dockerfile for building the log_api container
+│   ├── cmd/servercheck/      # CLI: is the server reachable from outside and listed on Steam?
 │   └── internal/             # Source code for log parsing, CSV generation, etc.
 ├── log_frontend/             # React-based dashboard application
 │   ├── public/
@@ -86,38 +87,91 @@ nmrih/
 - **Dockerized Environment:**
   - Easily build and run the complete project using Docker Compose.
 
-## Installation
+## Getting started
+
+Everything in this repository comes up with one command. This is the whole path
+from a fresh clone to a server players can join and a dashboard you can open.
+
+### What starts
+
+| Container | What it is |
+| --- | --- |
+| `nmrih_server` | The game itself. Installs/updates NMRiH through steamcmd, installs Metamod:Source + SourceMod and the plugins from `sourcemod/plugins`, runs srcds. |
+| `log_api` | Go backend: parses the server logs into CSV and serves the dashboard API. |
+| `log_frontend` | The dashboard itself. |
+| `redis` | Caches the dashboard's graph responses. |
+| `traefik` | Reverse proxy and HTTPS certificates. Left out when `PROXY_NETWORK` is set. |
+
+The game server writes its logs into `logs/`, which `log_api` reads. That shared
+directory is the whole integration between the two halves.
 
 ### Prerequisites
-- Docker and Docker Compose must be installed on your system.
+
+- Docker and Docker Compose.
 - ~15 GB of free disk space for the Steam install.
-- UDP+TCP `27015` forwarded to this host if players connect from the internet
-  (plus `27020/udp` when SourceTV is enabled), and `80`/`443` for the dashboard.
+- Forwarded to this host, if players connect over the internet:
+  `27015/udp` and `27015/tcp` for the game, `27020/udp` when SourceTV is on,
+  and `80`/`443` for the dashboard.
 
-### Steps
+### 1. Configure
 
-1. **Clone the Repository:**
-   ```bash
-   git clone <repository_url>
-   cd nmrih
-   ```
+```bash
+git clone <repository_url>
+cd nmrih
+cp .env.example .env
+```
 
-2. **Configure:**
-   ```bash
-   cp .env.example .env
-   ```
-   Fill in at least `NMRIH_HOSTNAME`, `NMRIH_RCON_PASSWORD`, `REDIS_PASSWORD`
-   and `TRAEFIK_ACME_EMAIL`. `make prepare` (run for you by every `make up`)
-   creates `logs/`, `server_data/` and the Traefik ACME storage with the right
-   ownership - docker would otherwise create them as root.
-   __Don't forget to change the host names in `docker-compose.yaml` !__
+Every value has a default, but these are the ones worth setting before the first
+start:
 
-3. **Build and Start Everything:**
-   ```bash
-   make up
-   ```
-   The first start downloads ~6 GB of game files; `make server-logs` shows the
-   progress. `make` on its own lists every target.
+| Variable | Why |
+| --- | --- |
+| `NMRIH_HOSTNAME` | The name players see in the browser. |
+| `NMRIH_RCON_PASSWORD` | Empty leaves rcon disabled. |
+| `NMRIH_GSLT` | Without it the server is not listed publicly — see below. |
+| `REDIS_PASSWORD` | The dashboard cache. |
+| `IP_INFO_API_TOKEN` | Resolves player IPs to countries for the pie chart. |
+| `TRAEFIK_ACME_EMAIL` | Certificate registration. |
+
+`make prepare`, which every `make up` runs for you, creates `logs/`,
+`server_data/` and the Traefik ACME storage with the right ownership — docker
+would otherwise create them owned by root and srcds could not write.
+
+__Don't forget to change the host names in `docker-compose.yaml`!__
+
+### 2. Start everything
+
+```bash
+make up
+```
+
+On a first run this downloads ~6 GB of game files, so it takes a while;
+`make server-logs` shows the progress. The same command is how you apply changes
+later — it rebuilds what changed and restarts it.
+
+What happens inside `nmrih_server` on every start, in order: steamcmd checks for
+a game update, Metamod:Source and SourceMod are copied into the game, plugins
+from `sourcemod/plugins` are installed, `cfg/server.cfg` is rendered from `.env`,
+and srcds takes over.
+
+### 3. Check it came up
+
+```bash
+make ps                # every container up, log_api healthy
+make server-logs       # ends with "starting: srcds_linux ..." then a map load
+make server-check      # answers from the internet? listed on Steam?
+```
+
+SourceMod, from the game server console (`make server-console`, detach with
+ctrl-p ctrl-q):
+
+```
+meta list              # Metamod loaded, SourceMod among its plugins
+sm plugins list        # nmrih_hudbars among them
+```
+
+Then open the dashboard at your domain, and join the server with
+`connect <host>:27015` in the game console.
 
 ### Running only one half
 
@@ -126,37 +180,52 @@ make server-up       # just the game server
 make monitoring-up   # just the dashboard stack
 ```
 
-### Another Traefik already on :80/:443?
+### Day to day
 
-Set `PROXY_NETWORK` in `.env` to that proxy's docker network (for example
-`PROXY_NETWORK=dealscout_default`). The Makefile then adds
-`docker-compose.shared-proxy.yaml`, which leaves the bundled Traefik out and
-attaches log_api/log_frontend to that network instead - the existing Traefik
-picks them up through their labels.
+| Command | What it does |
+| --- | --- |
+| `make logs` / `make ps` | Tail everything / status |
+| `make server-restart` | Restart the game server |
+| `make server-update` | Pull the latest game build from Steam and restart |
+| `make server-console` | Attach to the srcds console |
+| `make server-check` | Is the server reachable and listed on Steam? |
+| `make plugins` | Compile `sourcemod/scripting/*.sp` |
+| `make down` | Stop everything |
 
-### Keeping the game server updated
-
-```bash
-make server-update   # stops srcds, runs steamcmd, starts it again
-make server-restart  # a plain restart also re-validates the install
-```
+`make` on its own lists every target.
 
 ### Getting the server into the public server browser
 
 Without a Game Server Login Token the server only accepts direct connects.
 To get one: log in at <https://steamcommunity.com/dev/managegameservers> with a
 Steam account that is not limited (it needs at least one purchase), create a
-token for app id `224260` (the game - not `317670`, which is the server tool),
+token for app id `224260` (the game — not `317670`, which is the server tool),
 then put it in `.env` as `NMRIH_GSLT=` and run `make server-restart`.
 
-## Usage
+`make server-check` confirms whether it worked.
 
-- **Connect to the Game Server:**
-  `connect <host>:27015` in the game console, or find it in the server browser
-  once a GSLT is configured.
+### Another Traefik already on :80/:443?
 
-- **Access the Dashboard:**  
-  Open your browser and navigate to the configured domain (e.g., `https://rulat-bot.duckdns.org`) or use the mapped localhost ports (it should be additionally configured).
+Set `PROXY_NETWORK` in `.env` to that proxy's docker network (for example
+`PROXY_NETWORK=dealscout_default`). The Makefile then adds
+`docker-compose.shared-proxy.yaml`, which leaves the bundled Traefik out and
+attaches log_api/log_frontend to that network instead — the existing Traefik
+picks them up through their labels.
+
+### When something is wrong
+
+| Symptom | Where to look |
+| --- | --- |
+| Server missing from the browser | `make server-check` — it separates "does not answer" from "not listed by Steam" |
+| `srcds_linux missing` in the logs | The steamcmd install did not finish; `make server-update` runs it again with validation |
+| Dashboard empty | `make logs` for `log_api`; it needs `logs/` to contain server logs, which appear after the first round |
+| Plugin not loaded | `sm plugins list` in the console; the HUD bars plugin needs its netprops checked with `sm_hudbars_scan` |
+
+## The dashboard
+
+Open it at the domain configured in `docker-compose.yaml` (for example
+`https://rulat-bot.duckdns.org`); serving it on a plain localhost port instead
+needs a port mapping added to the compose file.
 
 - **Dashboard Features:**
   - **Top Time-Spent Players:**  
@@ -194,6 +263,50 @@ server vanilla.
 
 [sourcemod/README.md](sourcemod/README.md) covers the layout, what a restart
 touches, and the bundled HUD bars plugin.
+
+## Diagnostics
+
+When nobody can find the server in the browser, there are two separate questions:
+does it answer queries from the public internet, and does Steam list it at all.
+`servercheck` answers both.
+
+```bash
+make server-check                                  # public address of this stack
+make server-check ARGS="-addr=example.com -json"   # somewhere else, as JSON
+```
+
+```
+A2S query from the public internet
+  name      : Krich Server
+  map       : nmo_cabin
+  game      : NMRiH: Classic (nmrih, appid 224260)
+  players   : 0/8 (0 bots)
+  password  : no
+  VAC       : yes
+
+Steam global server list
+  listed as : <ip>:27015
+  game      : appid 224260 (nmrih)
+  region    : 3 (Europe)
+  sv_lan    : no
+
+Verdict: reachable and listed globally.
+```
+
+It exits with `0` when the server is reachable and listed, `1` when it does not
+answer at all and `2` when it answers but Steam does not know it, so it drops
+straight into a cron job or a monitoring check.
+
+Three things worth knowing when reading the output:
+
+- **Run it from outside this host.** From inside the same network the query can
+  be answered without ever leaving the LAN, which proves nothing about the path
+  players take. The Steam half of the check is location independent.
+- **An empty server is not a missing server.** Both server browsers push empty
+  servers to the bottom of the list or hide them behind a filter, so a server
+  that is listed can still look absent. Search it by name or connect by address.
+- **The A2S packet stores the AppID in 16 bits**, so NMRiH reports `0` there.
+  The tool reads the real AppID out of the 64-bit `GameID` field and says so.
 
 ## Customization
 

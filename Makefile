@@ -26,7 +26,7 @@ MONITORING_SERVICES += traefik
 endif
 
 .PHONY: help prepare up down restart ps logs \
-	server-up server-update server-restart server-stop server-console server-logs \
+	server-up server-update server-restart server-stop server-console server-logs server-check \
 	plugins monitoring-up monitoring-logs docker-re-run docker-clean-up
 
 help:
@@ -39,6 +39,7 @@ help:
 	@echo "make server-restart  restart the game server"
 	@echo "make server-console  attach to the srcds console (detach: ctrl-p ctrl-q)"
 	@echo "make server-logs     tail the game server container"
+	@echo "make server-check    is the server reachable from outside and listed on Steam?"
 	@echo ""
 	@echo "make plugins         compile sourcemod/scripting/*.sp (SourceMod $(SOURCEMOD_VERSION))"
 	@echo ""
@@ -87,6 +88,11 @@ server-console:
 
 server-logs:
 	$(COMPOSE) logs -f --tail 100 nmrih_server
+
+# Needs a local Go toolchain; the check itself talks to the public address, so
+# run it from somewhere outside this host to test the path players actually use.
+server-check:
+	$(MAKE) -C log_api server-check ARGS="$(ARGS)"
 
 # Compiles with the compiler that ships inside the game server image, so the
 # plugins are always built against exactly the SourceMod the server runs. No

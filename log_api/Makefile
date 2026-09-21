@@ -18,6 +18,11 @@ format:
 lint:
 	golangci-lint run -c=golangci.yaml
 
+# Diagnostics
+
+server-check:
+	go run ./cmd/servercheck $(ARGS)
+
 # Docker commands
 
 docker-image-build:
