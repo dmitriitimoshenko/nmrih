@@ -67,10 +67,18 @@ func TestService_Parse(t *testing.T) {
 			},
 		},
 		{
-			name: "failed: invalid data",
+			name: "success: an empty storage is not an error",
 			data: []byte(nil),
 			assert: func(t *testing.T, logData []*dto.LogData, err error) {
-				assert.Error(t, err)
+				assert.NoError(t, err)
+				assert.Nil(t, logData)
+			},
+		},
+		{
+			name: "success: whitespace only is treated as empty",
+			data: []byte("\n\n"),
+			assert: func(t *testing.T, logData []*dto.LogData, err error) {
+				assert.NoError(t, err)
 				assert.Nil(t, logData)
 			},
 		},

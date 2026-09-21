@@ -85,16 +85,8 @@ func (h *Handler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.csvRepository.GetAllCSVData()
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		ctx.Abort()
-		return
-	}
-	logs, err := h.csvParser.Parse(data)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		ctx.Abort()
+	logs, ok := h.readLogsIfNeeded(ctx, graphType)
+	if !ok {
 		return
 	}
 
@@ -112,6 +104,29 @@ func (h *Handler) Graph(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+// readLogsIfNeeded returns false once it has answered the request itself.
+func (h *Handler) readLogsIfNeeded(ctx *gin.Context, graphType enums.GraphType) ([]*dto.LogData, bool) {
+	if !graphType.NeedsLogs() {
+		return nil, true
+	}
+
+	data, err := h.csvRepository.GetAllCSVData()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.Abort()
+		return nil, false
+	}
+
+	logs, err := h.csvParser.Parse(data)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.Abort()
+		return nil, false
+	}
+
+	return logs, true
 }
 
 func (h *Handler) getCacheIfApplicable(ctx context.Context, graphType enums.GraphType) (*string, error) {
