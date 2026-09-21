@@ -29,6 +29,13 @@ func (gt GraphType) CanCache() bool {
 	return gt != playersInfoGraphType
 }
 
+// NeedsLogs reports whether the graph is built from the parsed logs. The live
+// player list is not: it comes straight from the game server over A2S, so it
+// must keep working before anything has been parsed into CSV.
+func (gt GraphType) NeedsLogs() bool {
+	return gt != playersInfoGraphType
+}
+
 type graphTypes struct{}
 
 func (graphTypes) TopTimeSpentGraphType() GraphType     { return topTimeSpentGraphType }

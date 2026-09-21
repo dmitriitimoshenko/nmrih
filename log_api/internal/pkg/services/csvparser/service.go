@@ -22,6 +22,12 @@ func NewService() *Service {
 }
 
 func (s *Service) Parse(data []byte) ([]*dto.LogData, error) {
+	// Nothing has been parsed into CSV yet. That is what a fresh install looks
+	// like before the first /parse, not a broken one.
+	if len(bytes.TrimSpace(data)) == 0 {
+		return nil, nil
+	}
+
 	reader := csv.NewReader(bytes.NewReader(data))
 
 	records, err := reader.ReadAll()
