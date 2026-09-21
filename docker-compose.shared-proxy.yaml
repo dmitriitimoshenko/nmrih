@@ -12,15 +12,24 @@ services:
     # A profile nothing ever enables: keeps the bundled proxy out of `up`.
     profiles: ["bundled-proxy-disabled"]
 
+  # Both dashboard containers sit on two networks here, and Traefik picks one
+  # address per container to route to. Without being told which, it can pick the
+  # traefik-net one, which the external proxy is not attached to: TLS still
+  # terminates and the request then hangs forever against an address nothing
+  # answers on. The label has to be set wherever the second network is.
   log_api:
     networks:
       - traefik-net
       - proxy
+    labels:
+      - "traefik.docker.network=${PROXY_NETWORK}"
 
   log_frontend:
     networks:
       - traefik-net
       - proxy
+    labels:
+      - "traefik.docker.network=${PROXY_NETWORK}"
 
 networks:
   proxy:
